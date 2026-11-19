@@ -1,0 +1,965 @@
+<!doctype html><html lang="nl"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body class="ro">
+<title>Ben&#39;s wedstrijden</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: zwarte clubkop met groene streep, grote feitenrij, dan W/G/V en saldo; wedstrijden als scorekaarten met logo's. */
+:root{
+  --green:#16883F; --green-ink:#0F6B31; --black:#0C110D; --black-2:#1A211B;
+  --bg:#F2F5F1; --card:#FFFFFF; --fg:#111713; --muted:#5C675F; --line:#D9E0D8;
+  --win:#16883F; --draw:#7A8A80; --loss:#C23B31; --soft:#E6EFE6; --on-green:#FFFFFF;
+  --f-head:'Space Grotesk','Inter',system-ui,sans-serif; --f-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --green:#2FB45B; --green-ink:#46C873; --bg:#0A0E0B; --card:#141A15; --fg:#E8EFE9; --muted:#9AA79D; --line:#263027;
+  --win:#3CC468; --draw:#8FA095; --loss:#EC6A5F; --soft:#17261B; --black:#050806; --black-2:#101611; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --green:#2FB45B; --green-ink:#46C873; --bg:#0A0E0B; --card:#141A15; --fg:#E8EFE9; --muted:#9AA79D; --line:#263027;
+  --win:#3CC468; --draw:#8FA095; --loss:#EC6A5F; --soft:#17261B; --black:#050806; --black-2:#101611; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{background:var(--black);color:#fff;border-bottom:4px solid var(--green)}
+header.top .wrap{display:flex;align-items:center;gap:16px;padding-block:18px}
+.logo{width:64px;height:64px;flex:none;border-radius:12px;background:var(--black-2);display:grid;place-items:center;overflow:hidden;cursor:pointer;border:1px solid #2c372e;padding:0}
+.logo img{width:100%;height:100%;object-fit:contain}
+.logo svg{width:44px;height:44px}
+h1{font:700 clamp(26px,5vw,40px)/1.05 var(--f-head);margin:0;letter-spacing:-.01em}
+.club{color:#9fb3a3;font-size:13px;margin-top:4px}
+.tiles{display:grid;gap:10px;padding-top:18px}
+.tiles.main{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.tiles.sub{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));padding-top:10px;padding-bottom:18px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font:700 30px/1.1 var(--f-head);font-variant-numeric:tabular-nums;margin-top:2px}
+.tile.hero{padding:16px 18px;border-top:4px solid var(--green)}
+.tile.hero .v{font-size:48px}
+.tile[data-goto]{cursor:pointer;transition:border-color .15s,transform .15s}
+.tile[data-goto]:hover{border-color:var(--green)}
+.tile[data-goto]:active{transform:scale(.98)}
+.tile .s{font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.tile.w .v{color:var(--win)} .tile.l .v{color:var(--loss)} .tile.d .v{color:var(--draw)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:16px}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font:600 14px var(--f-body);padding:10px 14px;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--green)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.panel[hidden]{display:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{font:700 20px/1.2 var(--f-head);margin:0 0 12px}
+h3{font:700 16px/1.2 var(--f-head);margin:0 0 8px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+th.sort{cursor:pointer} th.sort:hover{color:var(--fg)}
+tr.tot td{font-weight:700;border-top:2px solid var(--fg);border-bottom:0}
+tr.cur td{background:var(--soft);border-bottom:2px solid var(--green)}
+tr.cur td:first-child{box-shadow:inset 4px 0 0 var(--green)}
+.live{display:inline-flex;align-items:center;gap:5px;margin-left:6px;background:var(--green);color:#fff;font:700 11px var(--f-body);text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:999px;vertical-align:middle}
+.live i{width:7px;height:7px;border-radius:50%;background:#FFD43B;animation:livep 1.4s ease-in-out infinite}
+@keyframes livep{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live i{animation:none}}
+td.txt{white-space:normal;text-align:left}
+td.tn1{text-align:left;vertical-align:middle}
+td.tn1 .tw{display:flex;align-items:center;gap:10px}
+td{vertical-align:middle}
+.pos{color:var(--win)} .neg{color:var(--loss)}
+.chip{display:inline-block;min-width:24px;text-align:center;border-radius:5px;font:700 12px var(--f-head);padding:2px 6px;color:#fff}
+.chip.W{background:var(--win)} .chip.G{background:var(--draw)} .chip.V{background:var(--loss)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+input,select,textarea{font:15px var(--f-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;min-width:0}
+label{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.grid .wide{grid-column:1/-1}
+.grid input,.grid select,.grid textarea{width:100%}
+.btn{font:600 14px var(--f-body);border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:9px 14px;cursor:pointer}
+.btn.pri{background:var(--green);border-color:var(--green);color:var(--on-green)}
+.btn.danger{color:var(--loss)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seasonh{font:700 13px var(--f-head);color:var(--green-ink);text-transform:uppercase;letter-spacing:.08em;margin:20px 0 8px}
+/* scorekaart */
+.mc{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--draw);border-radius:12px;padding:10px 14px 10px;margin-bottom:10px}
+.mc.W{border-left-color:var(--win)} .mc.V{border-left-color:var(--loss)}
+.mc-top{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.mc-top .sp{flex:1}
+.mc-main{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px 10px;padding:6px 0}
+.tm{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-align:center}
+.tm .tn{font:600 13px var(--f-body);overflow-wrap:anywhere;line-height:1.2}
+.big{font:700 clamp(36px,9vw,54px)/1 var(--f-head);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.big i{font-style:normal;color:var(--muted);font-weight:500}
+.mc-foot{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.balls{font-size:20px;letter-spacing:1px;line-height:1;color:var(--fg)}
+.balls.none{font-size:13px;letter-spacing:0;color:var(--muted)}
+.mc-foot .sp{flex:1}
+/* logo's */
+.lg{flex:none;border-radius:50%;display:grid;place-items:center;overflow:hidden;color:#fff;font:700 12px var(--f-head);letter-spacing:.02em}
+.lg img{width:100%;height:100%;object-fit:contain;background:#fff}
+.lg.own img{background:transparent}
+.lgbtn{border:0;background:none;padding:0;cursor:pointer;border-radius:50%}
+.preview{border:2px solid var(--green);background:var(--soft);border-radius:10px;padding:14px;margin-top:14px}
+.preview ul{margin:8px 0 12px;padding-left:18px;color:var(--muted)}
+.err{color:var(--loss);font-size:13px;margin-top:8px;min-height:1em}
+.note{color:var(--muted);font-size:13px}
+.up .fin{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.up .fin input{width:100%}.up .when{font:600 13px var(--f-head);color:var(--green-ink)}.up .mc-h{display:flex;align-items:center;gap:12px;cursor:pointer}.up .mc-h .nm{flex:1;font:700 17px var(--f-head)}
+.facts{margin-top:10px;padding:12px 14px;border-radius:14px;background:var(--green-soft,rgba(22,136,63,.1));border:1px solid var(--green,#16883F)}.facts .fh{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-family:var(--f-head)}.facts ul{margin:0;padding-left:18px;font-size:14px;line-height:1.5}
+.empty{color:var(--muted);padding:20px 0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--black);color:#fff;border:1px solid var(--green);padding:10px 16px;border-radius:9px;z-index:20;max-width:90vw}
+.tour{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;background:var(--card)}
+.tour>summary{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:12px 14px;cursor:pointer;list-style:none}
+.tour>summary::-webkit-details-marker{display:none}
+.tour .tn2{font:700 16px var(--f-head);flex:1 1 200px}
+.tour .body{padding:4px 14px 12px}
+.badge{font-size:12px;color:var(--muted)}
+.tiles.navt{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));padding-top:0;padding-bottom:24px}
+.tile.nav{background:#0F3D22;border-color:#0F3D22;color:#fff;text-align:left;font:inherit;width:100%;cursor:pointer}
+.tile.nav:hover{background:#145230;border-color:#145230}
+.tile.nav .k{color:#a9d8b8}
+.tile.nav .v{color:#fff}
+.tile.nav .s{color:#FFD43B;font-weight:600}
+.agh{margin:0 0 10px}
+.addl{text-align:center;margin:18px 0 32px}
+.addl a{color:var(--green-ink);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.back{background:none;border:0;color:var(--green-ink);font:600 15px var(--f-body);padding:18px 0 12px;cursor:pointer}
+.homerow{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:14px}
+.homerow .card{margin:0}
+.hv h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vorm{display:flex;gap:8px}
+.vb{flex:1;max-width:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;padding:8px 0;color:#fff;font-family:var(--f-head)}
+.vb b{font-size:20px;line-height:1}.vb small{font-size:11px;opacity:.9;margin-top:3px;font-variant-numeric:tabular-nums}
+.vb.W{background:var(--win)}.vb.G{background:var(--draw)}.vb.V{background:var(--loss)}
+.stmini{cursor:pointer}.stmini:hover{border-color:var(--green)}
+.stmini .more{color:var(--green-ink);font-weight:600;font-size:13px;margin-top:6px}
+table.stand td,table.stand th{padding:7px 8px}
+table.stand td:nth-child(2){text-align:left}
+table.stand .tw{display:flex;align-items:center;gap:8px}
+table.stand tr.me td{background:var(--soft);font-weight:700}
+table.stand tr.me td:first-child{box-shadow:inset 4px 0 0 var(--green)}
+table.stand.mini td{padding:5px 6px;font-size:14px}
+.sti{width:52px;padding:5px 6px;text-align:right}
+.stform{border:2px solid var(--green);background:var(--soft);border-radius:10px;padding:14px;margin-bottom:12px}.stform .grid{margin-bottom:6px}
+.stman summary{cursor:pointer;color:var(--green-ink);font-weight:600;margin:6px 0 10px}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
+.na{color:var(--muted)}
+.ast{color:var(--fg)}
+.cup{font-size:18px;margin-left:4px}
+.up.feat{border:2px solid var(--green);background:linear-gradient(180deg,var(--soft),var(--card) 70%)}
+.feath{font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--green-ink);margin-bottom:8px}
+.up.feat .mc-h .nm{font-size:21px}
+.up .fin{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
+.recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.rec{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg)}
+.rec .ri{font-size:22px}.rec .rk{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.rec .rv{font:700 30px/1.1 var(--f-head);margin:2px 0;font-variant-numeric:tabular-nums}.rec .rs{font-size:13px;color:var(--muted)}
+.chart{width:100%;height:auto;display:block}
+.chart .cg{stroke:var(--line);stroke-width:1}
+.chart .cbar{fill:var(--green)}.chart .cbar.cur{fill:url(#hatch);stroke:var(--green);stroke-width:1.5}
+.chart .hbg{fill:var(--soft)}.chart .hln{stroke:var(--green);stroke-width:2}
+.chart .cb:hover .cbar,.chart .cb:focus .cbar{opacity:.8}
+.chart .cv{font:700 14px var(--f-head);fill:var(--fg)}.chart .cl{font:600 12px var(--f-body);fill:var(--fg)}.chart .cs{font:400 11px var(--f-body);fill:var(--muted)}
+.party{position:fixed;inset:0;z-index:50;background:rgba(5,8,6,.72);display:grid;place-items:center}
+.party[hidden]{display:none}
+.party canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pbox{position:relative;background:linear-gradient(135deg,#0C110D,#16883F);color:#fff;border:3px solid #FFD43B;border-radius:20px;padding:26px 24px;text-align:center;max-width:88vw;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.pbox .pic{font-size:56px;line-height:1}.pbox .pt{font:700 clamp(30px,8vw,48px)/1.1 var(--f-head);color:#FFD43B;margin:10px 0 6px}.pbox .ps{margin-bottom:16px}
+
+.ro [data-edit],.ro [data-del],.ro [data-fin],.ro [data-delup],.ro [data-addto],.ro [data-deltour],.ro #stEdit,.ro #bulkLogos,.ro #addLink,.ro .addl,.ro #p-toevoegen{display:none!important}
+.ro .lgbtn{pointer-events:none;cursor:default}.ro .logo{cursor:default}
+.ro .ronote{display:none}
+/* weetje */
+.wjd{margin-top:18px;position:relative;border-radius:18px;padding:20px 18px 16px;background:radial-gradient(circle at 88% 15%,rgba(255,212,59,.35) 0,transparent 38%),linear-gradient(135deg,#0C110D 0%,#123d20 55%,#16883F 100%);color:#fff;overflow:hidden;box-shadow:0 8px 24px rgba(22,136,63,.28)}
+.wjd[hidden]{display:none}
+.wjd .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wjd .stk{display:inline-block;transform:rotate(-3deg);background:#FFD43B;color:#0C110D;font:700 16px var(--f-head);padding:5px 12px;border-radius:8px;box-shadow:3px 3px 0 #0C110D}
+.wjd .tag{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#bfe9cc;border:1px solid rgba(191,233,204,.4);border-radius:999px;padding:2px 9px}
+.wjd .txt{position:relative;font:600 clamp(19px,4.8vw,27px)/1.3 var(--f-head);margin:14px 0 12px;max-width:30ch;animation:wjdpop .45s ease}
+.wjd .txt b{color:#FFD43B;font-weight:700}
+.wjd .ball{position:absolute;right:-14px;bottom:-26px;font-size:120px;line-height:1;opacity:.2;transform:rotate(-18deg);pointer-events:none}
+.wjd .bar{position:relative;height:10px;border-radius:999px;background:rgba(255,255,255,.15);margin:0 0 12px;max-width:340px;overflow:hidden}
+.wjd .bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#FFD43B,#ffb703);border-radius:999px}
+.wjd .nx{position:relative;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 14px;font:600 13px var(--f-body);cursor:pointer}
+.wjd .nx:hover{background:rgba(255,255,255,.2)}
+@keyframes wjdpop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.wjd .txt{animation:none}}
+</style>
+
+<header class="top"><div class="wrap">
+  <button class="logo" id="logoBtn" type="button" aria-label="Clublogo SV Alliance '22"></button>
+  <div><h1>Ben's wedstrijden</h1><div class="club">SV Alliance '22 &middot; <span id="upd"></span></div></div>
+</div></header>
+<input type="file" id="logoFile" accept="image/*" hidden>
+<input type="file" id="oppFile" accept="image/*" hidden>
+<input type="file" id="oppFiles" accept="image/*" multiple hidden>
+
+<main class="wrap">
+  <div id="home">
+  <section class="wjd" id="wjd" aria-live="polite" hidden></section>
+  <section class="tiles main" id="tilesMain" aria-label="Feiten"></section>
+  <section class="tiles sub" id="tilesSub" aria-label="Resultaten"></section>
+  <section class="homerow" id="homeRow"></section>
+  <nav class="tiles navt" id="navTiles" aria-label="Onderdelen"></nav>
+  <h2 class="agh">Geplande wedstrijden</h2>
+  <div id="p-agenda"></div>
+  <p class="addl"><a href="#toevoegen" id="addLink">+ Wedstrijd of toernooi toevoegen</a></p>
+  </div>
+  <div id="backbar" hidden><button class="back" data-goto="home" type="button">← Terug naar overzicht</button></div>
+  <div class="panel" id="p-seizoen" hidden></div>
+  <div class="panel" id="p-wedstrijden" hidden></div>
+  <div class="panel" id="p-toernooien" hidden></div>
+  <div class="panel" id="p-tegenstanders" hidden></div>
+  <div class="panel" id="p-records" hidden></div>
+  <div class="panel" id="p-stand" hidden></div>
+
+  <div class="panel" id="p-toevoegen" hidden>
+    <div class="card">
+      <h2 id="formTitle">Wedstrijd toevoegen</h2>
+      <form id="mform" autocomplete="off">
+        <div class="grid">
+          <div class="wide" id="w_status"><label for="f_status">Wedstrijd is</label><select id="f_status"><option value="played">Al gespeeld (met uitslag)</option><option value="planned">Gepland (nog geen uitslag)</option></select></div>
+          <div id="w_kind"><label for="f_kind">Soort</label><select id="f_kind"><option value="competitie">Competitie / oefen</option><option value="toernooi">Toernooi</option></select></div>
+          <div id="w_tour" hidden><label for="f_tour">Toernooi</label><select id="f_tour"></select></div>
+          <div id="w_type"><label for="f_type">Type</label><select id="f_type"><option>Competitie</option><option value="1e klasse">Competitie – 1e klasse</option><option value="2e klasse">Competitie – 2e klasse</option><option value="invallen">Competitie – invallen</option><option>Oefenwedstrijd</option><option>Beker</option><option>Kampioenswedstrijd</option></select></div>
+          <div><label for="f_date">Datum</label><input type="date" id="f_date" required></div>
+          <div class="wide"><label for="f_opp">Tegenstander</label><input id="f_opp" list="oppList" placeholder="bijv. KHFC (JO12-1 e.d. mag erachter)"><datalist id="oppList"></datalist><div class="note" id="oppHint"></div><div id="oppFacts"></div></div>
+          <div><label for="f_home">Thuis / uit</label><select id="f_home"><option value="1">Thuis</option><option value="0">Uit</option></select></div>
+          <div class="sc"><label for="f_gf">Doelpunten Alliance</label><input type="number" min="0" id="f_gf" inputmode="numeric"></div>
+          <div class="sc"><label for="f_ga">Doelpunten tegenstander</label><input type="number" min="0" id="f_ga" inputmode="numeric"></div>
+          <div class="sc"><label for="f_goals">Goals Ben</label><input type="number" min="0" id="f_goals" inputmode="numeric" value="0"></div>
+          <div class="sc"><label for="f_assists">Assists Ben</label><input type="number" min="0" id="f_assists" inputmode="numeric" value="0"></div>
+          <div class="wide"><label for="f_note">Opmerking</label><textarea id="f_note" rows="2" placeholder="bijv. 1 kopbal, beker gewonnen"></textarea></div>
+        </div>
+        <div class="err" id="ferr" role="alert"></div>
+        <div class="row" style="margin-top:8px"><button class="btn pri" type="submit">Controleren</button><button class="btn" type="button" id="fcancel" hidden>Annuleer wijziging</button></div>
+      </form>
+      <div class="preview" id="pv" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>Toernooi toevoegen</h2>
+      <p class="note" style="margin-top:0">Maak eerst het toernooi aan. Daarna voeg je de wedstrijden toe via het formulier hierboven (soort: Toernooi).</p>
+      <form id="tform" class="grid" autocomplete="off">
+        <div><label for="t_date">Datum</label><input type="date" id="t_date" required></div>
+        <div class="wide"><label for="t_name">Toernooinaam</label><input id="t_name" required placeholder="bijv. KiKa Toernooi"></div>
+        <div class="wide"><label for="t_club">Organisator</label><input id="t_club" list="oppList" placeholder="leeg = Alliance (eigen toernooi)"></div>
+        <div class="wide row"><button class="btn pri" type="submit">Toernooi aanmaken</button></div>
+      </form>
+      <div class="err" id="terr" role="alert"></div>
+    </div>
+
+    <div class="card" id="dataCard">
+      <h3>Gegevens</h3>
+      <div class="row"><button class="btn" id="exportBtn" type="button">Back-up / website-export opslaan</button><span class="note" id="storeNote"></span></div>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast" hidden></div>
+<div class="party" id="party" hidden></div>
+
+<script>
+const SEED = {"matches":[{"id":"m1","seq":1,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"SV Hoofddorp","oppRaw":"SV Hoofddorp","home":false,"gf":6,"ga":2,"goals":1,"type":"","note":""},{"id":"m2","seq":2,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"Geel-Wit","oppRaw":"GEEL Wit","home":true,"gf":2,"ga":5,"goals":0,"type":"","note":""},{"id":"m3","seq":3,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"KHFC","oppRaw":"KHFC","home":false,"gf":5,"ga":2,"goals":2,"type":"","note":""},{"id":"m4","seq":4,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"Zandvoort","oppRaw":"Zandvoort","home":true,"gf":8,"ga":7,"goals":5,"type":"","note":""},{"id":"m5","seq":5,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"Aalsmeer","oppRaw":"Aalsmeer","home":false,"gf":5,"ga":1,"goals":3,"type":"","note":""},{"id":"m6","seq":6,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"Geel-Wit","oppRaw":"Geelwit","home":false,"gf":1,"ga":6,"goals":0,"type":"","note":""},{"id":"m7","seq":7,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"Overbos","oppRaw":"Overbos","home":false,"gf":2,"ga":12,"goals":1,"type":"","note":""},{"id":"m8","seq":8,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"BSM","oppRaw":"Bsm","home":true,"gf":5,"ga":4,"goals":2,"type":"","note":""},{"id":"m9","seq":9,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"KHFC","oppRaw":"KHFC","home":false,"gf":5,"ga":2,"goals":0,"type":"","note":""},{"id":"m10","seq":10,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"DSS","oppRaw":"Dss","home":false,"gf":4,"ga":5,"goals":1,"type":"","note":""},{"id":"m11","seq":11,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"DIO","oppRaw":"DIO","home":true,"gf":6,"ga":2,"goals":0,"type":"","note":""},{"id":"m12","seq":12,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"Zandvoort","oppRaw":"Zandvoort","home":false,"gf":2,"ga":4,"goals":1,"type":"","note":""},{"id":"m13","seq":13,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"BSM","oppRaw":"BSM","home":false,"gf":2,"ga":2,"goals":0,"type":"","note":""},{"id":"m14","seq":14,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"KHFC","oppRaw":"KHFC","home":false,"gf":4,"ga":1,"goals":1,"type":"","note":""},{"id":"m15","seq":15,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"RCH","oppRaw":"RCH","home":false,"gf":1,"ga":9,"goals":0,"type":"","note":""},{"id":"m16","seq":16,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"KHFC","oppRaw":"KHFC","home":false,"gf":3,"ga":8,"goals":0,"type":"","note":""},{"id":"m17","seq":17,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"BSM","oppRaw":"BSM","home":false,"gf":3,"ga":3,"goals":0,"type":"","note":""},{"id":"m18","seq":18,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"Zandvoort","oppRaw":"Zandvoort","home":false,"gf":4,"ga":2,"goals":0,"type":"","note":""},{"id":"m19","seq":19,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"United / DAVO","oppRaw":"United / DAVO","home":true,"gf":5,"ga":3,"goals":3,"type":"","note":""},{"id":"m20","seq":20,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"DIO","oppRaw":"DIO","home":true,"gf":3,"ga":1,"goals":2,"type":"","note":""},{"id":"m21","seq":21,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"DSK","oppRaw":"DSK","home":false,"gf":6,"ga":7,"goals":5,"type":"","note":""},{"id":"m22","seq":22,"kind":"competitie","season":"22/23","date":null,"tour":null,"team":"","opp":"Brentwood (ENG)","oppRaw":"Brentwood (ENG)","home":true,"gf":6,"ga":4,"goals":1,"type":"","note":""},{"id":"m23","seq":23,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"Fortuna Wormerveer","oppRaw":"Fortuna Wormerveer","home":false,"gf":3,"ga":9,"goals":1,"type":"","note":""},{"id":"m24","seq":24,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"DSS","oppRaw":"DSS","home":true,"gf":2,"ga":2,"goals":1,"type":"","note":""},{"id":"m25","seq":25,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"Onze Gezellen","oppRaw":"Onze Gezellen","home":false,"gf":0,"ga":4,"goals":0,"type":"","note":""},{"id":"m26","seq":26,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-7","opp":"Geel-Wit","oppRaw":"Geelwit","home":false,"gf":16,"ga":3,"goals":7,"type":"","note":""},{"id":"m27","seq":27,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"ADO'20","oppRaw":"ADO'20","home":true,"gf":4,"ga":3,"goals":2,"type":"","note":""},{"id":"m28","seq":28,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"ODIN","oppRaw":"ODIN","home":true,"gf":3,"ga":2,"goals":1,"type":"","note":""},{"id":"m29","seq":29,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"DSK","oppRaw":"DSK","home":true,"gf":3,"ga":10,"goals":2,"type":"","note":""},{"id":"m30","seq":30,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"DSS","oppRaw":"DSS","home":false,"gf":4,"ga":6,"goals":1,"type":"","note":""},{"id":"m31","seq":31,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"Ijmuiden","oppRaw":"Ijmuiden","home":true,"gf":2,"ga":4,"goals":0,"type":"","note":""},{"id":"m32","seq":32,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"DIO","oppRaw":"DIO","home":true,"gf":7,"ga":1,"goals":4,"type":"","note":""},{"id":"m33","seq":33,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"SV Alliance (intern)","oppRaw":"SV Alliance '22 JO8-1","home":false,"gf":4,"ga":2,"goals":3,"type":"","note":""},{"id":"m34","seq":34,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"SV Alliance (intern)","oppRaw":"SV Alliance '22 JO9-3","home":false,"gf":3,"ga":2,"goals":1,"type":"","note":""},{"id":"m35","seq":35,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"KHFC","oppRaw":"KHFC","home":false,"gf":4,"ga":4,"goals":3,"type":"","note":""},{"id":"m36","seq":36,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"ODIN","oppRaw":"ODIN","home":true,"gf":4,"ga":3,"goals":2,"type":"","note":""},{"id":"m37","seq":37,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"DEM","oppRaw":"DEM","home":false,"gf":2,"ga":4,"goals":0,"type":"","note":""},{"id":"m38","seq":38,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"SV Alliance (intern)","oppRaw":"SV Alliance '22 JO9-4","home":true,"gf":6,"ga":3,"goals":3,"type":"","note":""},{"id":"m39","seq":39,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"Vitesse '22","oppRaw":"Vitesse '22","home":true,"gf":4,"ga":4,"goals":2,"type":"","note":""},{"id":"m40","seq":40,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"SV Alliance (intern)","oppRaw":"SV Alliance '22 JO8-1","home":false,"gf":3,"ga":3,"goals":2,"type":"","note":""},{"id":"m41","seq":41,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"DSS","oppRaw":"DSS","home":false,"gf":4,"ga":7,"goals":0,"type":"","note":""},{"id":"m42","seq":42,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"ADO'20","oppRaw":"ADO'20","home":true,"gf":2,"ga":5,"goals":0,"type":"","note":""},{"id":"m43","seq":43,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"KHFC","oppRaw":"KHFC JO9-4","home":true,"gf":3,"ga":5,"goals":1,"type":"","note":""},{"id":"m44","seq":44,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"SV Hoofddorp","oppRaw":"SV Hoofddorp JO9-2","home":false,"gf":1,"ga":13,"goals":1,"type":"","note":""},{"id":"m45","seq":45,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"DIO","oppRaw":"DIO JO9-1","home":true,"gf":0,"ga":4,"goals":0,"type":"","note":""},{"id":"m46","seq":46,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"KHFC","oppRaw":"KHFC JO9-2","home":true,"gf":2,"ga":2,"goals":0,"type":"","note":""},{"id":"m47","seq":47,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"HBC","oppRaw":"HBC JO9-1","home":true,"gf":4,"ga":4,"goals":0,"type":"","note":""},{"id":"m48","seq":48,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-4","opp":"VVC","oppRaw":"VVC","home":true,"gf":4,"ga":6,"goals":1,"type":"","note":""},{"id":"m49","seq":49,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"","opp":"SV Alliance (intern)","oppRaw":"SV Alliance '22 JO9-Mix","home":true,"gf":7,"ga":4,"goals":2,"type":"","note":""},{"id":"m50","seq":50,"kind":"competitie","season":"23/24","date":null,"tour":null,"team":"JO9-2","opp":"RCH","oppRaw":"RCH JO9-1","home":false,"gf":3,"ga":6,"goals":0,"type":"","note":""},{"id":"m51","seq":51,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Haarlem Kennemerland","oppRaw":"Haarlem Kennemerland JO10-2","home":false,"gf":6,"ga":4,"goals":1,"type":"","note":""},{"id":"m52","seq":52,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"DSS","oppRaw":"DSS JO10-2","home":true,"gf":8,"ga":9,"goals":2,"type":"","note":""},{"id":"m53","seq":53,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"DEM","oppRaw":"DEM JO10-1","home":false,"gf":3,"ga":12,"goals":1,"type":"","note":""},{"id":"m54","seq":54,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"SV Alliance (intern)","oppRaw":"SV Alliance JO10-5","home":true,"gf":1,"ga":3,"goals":1,"type":"","note":""},{"id":"m55","seq":55,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"KHFC","oppRaw":"KHFC JO10-3","home":true,"gf":11,"ga":4,"goals":2,"type":"","note":""},{"id":"m56","seq":56,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Geel-Wit","oppRaw":"Geel-Wit JO10-1","home":false,"gf":1,"ga":9,"goals":0,"type":"","note":""},{"id":"m57","seq":57,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"SV Alliance (intern)","oppRaw":"SV Alliance JO10-5","home":true,"gf":8,"ga":2,"goals":2,"type":"","note":""},{"id":"m58","seq":58,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Ijmuiden","oppRaw":"Ijmuiden JO10-1","home":true,"gf":4,"ga":4,"goals":0,"type":"","note":""},{"id":"m59","seq":59,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Onze Gezellen","oppRaw":"Onze gezellen JO10-1","home":false,"gf":1,"ga":12,"goals":1,"type":"","note":""},{"id":"m60","seq":60,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"DSS","oppRaw":"Dss","home":false,"gf":4,"ga":12,"goals":2,"type":"","note":""},{"id":"m61","seq":61,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Haarlem Kennemerland","oppRaw":"Haarlem kennermeland Jo10-3","home":false,"gf":5,"ga":8,"goals":2,"type":"","note":""},{"id":"m62","seq":62,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Onze Gezellen","oppRaw":"Onze Gezellen","home":false,"gf":4,"ga":4,"goals":2,"type":"","note":""},{"id":"m63","seq":63,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-7","opp":"Overbos","oppRaw":"Overbos","home":true,"gf":5,"ga":9,"goals":5,"type":"","note":""},{"id":"m64","seq":64,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"KHFC","oppRaw":"KHFC JO10-5","home":true,"gf":4,"ga":8,"goals":1,"type":"","note":""},{"id":"m65","seq":65,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-4","opp":"Olympia Haarlem","oppRaw":"Olympia Haarlem","home":true,"gf":4,"ga":6,"goals":1,"type":"","note":""},{"id":"m66","seq":66,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"KHFC","oppRaw":"KHFC JO10-3","home":true,"gf":7,"ga":7,"goals":2,"type":"","note":""},{"id":"m67","seq":67,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"DSS","oppRaw":"DSS JO10-3","home":false,"gf":4,"ga":6,"goals":3,"type":"","note":""},{"id":"m68","seq":68,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"RKVV Velsen","oppRaw":"RKVV Velsen JO10-1","home":false,"gf":6,"ga":2,"goals":0,"type":"","note":""},{"id":"m69","seq":69,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"DIO","oppRaw":"DIO JO10-2","home":true,"gf":6,"ga":1,"goals":1,"type":"","note":""},{"id":"m70","seq":70,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"VVH/Velserbroek","oppRaw":"VVH/Velserbroek JO10-1","home":false,"gf":10,"ga":4,"goals":2,"type":"","note":""},{"id":"m71","seq":71,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Geel-Wit","oppRaw":"Geel Wit JO10-3","home":true,"gf":2,"ga":1,"goals":0,"type":"","note":""},{"id":"m72","seq":72,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Sporting Adrichem","oppRaw":"Sporting Adrichem JO10-1","home":false,"gf":5,"ga":8,"goals":0,"type":"","note":""},{"id":"m73","seq":73,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Overbos","oppRaw":"Overbos JO10-4","home":true,"gf":3,"ga":3,"goals":0,"type":"","note":""},{"id":"m74","seq":74,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Bloemendaal","oppRaw":"Bloemendaal JO10-2","home":false,"gf":6,"ga":4,"goals":4,"type":"","note":""},{"id":"m75","seq":75,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"VVH/Velserbroek","oppRaw":"VVH/Velserbroek JO10-1","home":true,"gf":9,"ga":2,"goals":0,"type":"","note":""},{"id":"m76","seq":76,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"DSS","oppRaw":"DSS JO10-4","home":true,"gf":4,"ga":3,"goals":3,"type":"","note":""},{"id":"m77","seq":77,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"KHFC","oppRaw":"KHFC JO10-4","home":false,"gf":10,"ga":5,"goals":4,"type":"","note":""},{"id":"m78","seq":78,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Geel-Wit","oppRaw":"Geel Wit JO10-3","home":true,"gf":9,"ga":3,"goals":2,"type":"","note":""},{"id":"m79","seq":79,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"RKVV Velsen","oppRaw":"RKVV Velsen JO10-1","home":false,"gf":7,"ga":3,"goals":3,"type":"","note":""},{"id":"m80","seq":80,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-4","opp":"KHFC","oppRaw":"KHFC JO10-8","home":true,"gf":11,"ga":8,"goals":2,"type":"","note":""},{"id":"m81","seq":81,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO10-2","opp":"Haarlem Kennemerland","oppRaw":"Haarlem Kennermeland JO9-2","home":false,"gf":14,"ga":5,"goals":6,"type":"","note":""},{"id":"m82","seq":82,"kind":"competitie","season":"24/25","date":null,"tour":null,"team":"JO11-2","opp":"RKVV Velsen","oppRaw":"RKVV Velsen JO11-1","home":false,"gf":2,"ga":5,"goals":0,"type":"","note":""},{"id":"m83","seq":83,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"AMVJ","oppRaw":"AMVJ JO11-1","home":false,"gf":3,"ga":2,"goals":1,"type":"Oefenwedstrijd","note":""},{"id":"m84","seq":84,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"DSS","oppRaw":"DSS JO11-2","home":false,"gf":1,"ga":7,"goals":0,"type":"1e Klasse","note":""},{"id":"m85","seq":85,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"KHFC","oppRaw":"KHFC JO11-3","home":true,"gf":2,"ga":6,"goals":0,"type":"","note":""},{"id":"m86","seq":86,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Onze Gezellen","oppRaw":"Onze Gezellen JO11-2","home":false,"gf":2,"ga":4,"goals":0,"type":"","note":""},{"id":"m87","seq":87,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"RKVV Velsen","oppRaw":"RKVV Velsen JO11-1","home":false,"gf":2,"ga":3,"goals":0,"type":"","note":""},{"id":"m88","seq":88,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Bloemendaal","oppRaw":"Bloemendaal JO11-3","home":true,"gf":0,"ga":7,"goals":0,"type":"","note":""},{"id":"m89","seq":89,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Ijmuiden","oppRaw":"Ijmuiden JO11-1","home":false,"gf":6,"ga":2,"goals":1,"type":"","note":""},{"id":"m90","seq":90,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"DEM","oppRaw":"RKVV DEM JO11-3","home":true,"gf":1,"ga":7,"goals":1,"type":"","note":""},{"id":"m91","seq":91,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"DSS","oppRaw":"DSS JO11-3","home":false,"gf":5,"ga":1,"goals":1,"type":"2e Klasse","note":""},{"id":"m92","seq":92,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Ijmuiden","oppRaw":"Ijmuiden JO11-2","home":true,"gf":10,"ga":1,"goals":1,"type":"","note":""},{"id":"m93","seq":93,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"VSV","oppRaw":"VSV JO11-1","home":false,"gf":8,"ga":4,"goals":3,"type":"","note":""},{"id":"m94","seq":94,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"KHFC","oppRaw":"HFC JO11-5","home":false,"gf":2,"ga":2,"goals":0,"type":"","note":""},{"id":"m95","seq":95,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"SVIJ","oppRaw":"SVIJ JO11-1","home":false,"gf":4,"ga":2,"goals":0,"type":"","note":""},{"id":"m96","seq":96,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"RKVV Velsen","oppRaw":"Velsen JO11-2","home":true,"gf":7,"ga":0,"goals":2,"type":"Kampioenswedstrijd","note":""},{"id":"m97","seq":97,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"AMVJ","oppRaw":"AMVJ JO11-1","home":false,"gf":2,"ga":7,"goals":0,"type":"Oefenwedstrijd","note":""},{"id":"m98","seq":98,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Geel-Wit","oppRaw":"Geel Wit JO11-1","home":true,"gf":2,"ga":11,"goals":1,"type":"1e Klasse","note":""},{"id":"m99","seq":99,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Zandvoort","oppRaw":"Zandvoort JO11-1","home":false,"gf":3,"ga":6,"goals":1,"type":"","note":""},{"id":"m100","seq":100,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Hillegom","oppRaw":"Hillegom JO11-1","home":true,"gf":4,"ga":4,"goals":1,"type":"","note":""},{"id":"m101","seq":101,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Zwanenburg","oppRaw":"Zwanenburg. JO11-2","home":false,"gf":2,"ga":3,"goals":0,"type":"Oefenwedstrijd","note":""},{"id":"m102","seq":102,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"SV Alliance (intern)","oppRaw":"Alliance JO10-1","home":true,"gf":3,"ga":2,"goals":1,"type":"Oefenwedstrijd","note":""},{"id":"m103","seq":103,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Kagia","oppRaw":"KagiaJO11-1","home":false,"gf":3,"ga":7,"goals":0,"type":"","note":""},{"id":"m104","seq":104,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"DIOS","oppRaw":"DIOSJO11-1","home":true,"gf":5,"ga":7,"goals":2,"type":"","note":""},{"id":"m105","seq":105,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"KHFC","oppRaw":"KHFC JO 11-4","home":false,"gf":0,"ga":6,"goals":0,"type":"","note":""},{"id":"m106","seq":106,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"SV Hoofddorp","oppRaw":"Hoofddorp JO 11-2","home":false,"gf":3,"ga":9,"goals":1,"type":"","note":""},{"id":"m107","seq":107,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"Spaarnwoude","oppRaw":"Spaarnwoude JO11-1","home":true,"gf":1,"ga":0,"goals":1,"type":"2e Klasse","note":""},{"id":"m108","seq":108,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"HBC","oppRaw":"HBC JO11-1","home":false,"gf":1,"ga":6,"goals":0,"type":"","note":""},{"id":"m109","seq":109,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"SV Hoofddorp","oppRaw":"SV Hoofddorp JO11-4","home":true,"gf":6,"ga":1,"goals":0,"type":"","note":""},{"id":"m110","seq":110,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"KHFC","oppRaw":"KHFC JO 11-5","home":false,"gf":2,"ga":6,"goals":1,"type":"","note":""},{"id":"m111","seq":111,"kind":"competitie","season":"25/26","date":null,"tour":null,"team":"JO11-2","opp":"SCPB","oppRaw":"SCPB JO11-6","home":true,"gf":4,"ga":3,"goals":1,"type":"","note":""},{"id":"m112","seq":112,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"SV Alliance (intern)","oppRaw":"SVA MO12-1","home":true,"gf":14,"ga":0,"goals":4,"type":"","note":""},{"id":"m113","seq":113,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"Spaarnwoude","oppRaw":"Spaarnwoude JO12-1","home":false,"gf":3,"ga":3,"goals":1,"type":"","note":""},{"id":"m114","seq":114,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"KHFC","oppRaw":"HFC JO12-2","home":true,"gf":1,"ga":4,"goals":0,"type":"1e klasse","note":""},{"id":"m115","seq":115,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"Zandvoort","oppRaw":"Zandvoort JO12-2","home":false,"gf":5,"ga":3,"goals":2,"type":"","note":""},{"id":"m116","seq":116,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"RCH","oppRaw":"RCHJO12-1","home":false,"gf":1,"ga":8,"goals":0,"type":"","note":""},{"id":"m117","seq":117,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"SCPB","oppRaw":"SCPB MO12-1","home":true,"gf":4,"ga":1,"goals":1,"type":"","note":""},{"id":"m118","seq":118,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"RKVV Velsen","oppRaw":"RKVV Velsen JO12-1","home":false,"gf":3,"ga":1,"goals":1,"type":"1e klasse","note":""},{"id":"m119","seq":119,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"KHFC","oppRaw":"KHFC JO 12-4","home":true,"gf":3,"ga":0,"goals":1,"type":"","note":""},{"id":"m120","seq":120,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-5","opp":"Hillegom","oppRaw":"Hilllegom JO12-3","home":false,"gf":5,"ga":0,"goals":1,"type":"","note":""},{"id":"m121","seq":121,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"SVIJ","oppRaw":"SVIJ JO12-1","home":true,"gf":1,"ga":2,"goals":1,"type":"","note":""},{"id":"m122","seq":122,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-2","opp":"Haarlem Kennemerland","oppRaw":"Haarlem Kennemerland JO12-1","home":false,"gf":0,"ga":8,"goals":0,"type":"","note":""},{"id":"m123","seq":123,"kind":"competitie","season":"26/27","date":null,"tour":null,"team":"JO12-5","opp":"United / DAVO","oppRaw":"United / DAVO JO12-9","home":true,"gf":9,"ga":1,"goals":3,"type":"","note":""},{"id":"m124","seq":124,"kind":"toernooi","season":"22/23","date":"2023-05-27","tour":"t1","team":"","opp":"AMVJ","oppRaw":"AMVJ","home":true,"gf":3,"ga":2,"goals":3,"type":"","note":""},{"id":"m125","seq":125,"kind":"toernooi","season":"22/23","date":"2023-05-27","tour":"t1","team":"","opp":"SV Hoofddorp","oppRaw":"SV Hoofddorp","home":true,"gf":3,"ga":0,"goals":2,"type":"","note":""},{"id":"m126","seq":126,"kind":"toernooi","season":"22/23","date":"2023-05-27","tour":"t1","team":"","opp":"DSS","oppRaw":"DSS","home":true,"gf":1,"ga":2,"goals":1,"type":"","note":""},{"id":"m127","seq":127,"kind":"toernooi","season":"22/23","date":"2023-06-03","tour":"t2","team":"","opp":"KSV","oppRaw":"KSV","home":true,"gf":4,"ga":2,"goals":3,"type":"","note":"(1 kopbal)"},{"id":"m128","seq":128,"kind":"toernooi","season":"22/23","date":"2023-06-03","tour":"t2","team":"","opp":"VSV","oppRaw":"VSV","home":true,"gf":1,"ga":1,"goals":0,"type":"","note":""},{"id":"m129","seq":129,"kind":"toernooi","season":"22/23","date":"2023-06-03","tour":"t2","team":"","opp":"Hollandia Tuitjenhorn","oppRaw":"Hollandia Tuitjenhorn","home":true,"gf":2,"ga":5,"goals":1,"type":"","note":""},{"id":"m130","seq":130,"kind":"toernooi","season":"22/23","date":"2023-06-03","tour":"t2","team":"","opp":"Sporting Almere","oppRaw":"Sporting Almere","home":true,"gf":2,"ga":2,"goals":1,"type":"","note":""},{"id":"m131","seq":131,"kind":"toernooi","season":"22/23","date":"2023-06-10","tour":"t3","team":"","opp":"Geel-Wit","oppRaw":"Geel-Wit","home":true,"gf":1,"ga":7,"goals":1,"type":"","note":""},{"id":"m132","seq":132,"kind":"toernooi","season":"22/23","date":"2023-06-10","tour":"t3","team":"","opp":"DIO","oppRaw":"DIO","home":true,"gf":1,"ga":6,"goals":0,"type":"","note":""},{"id":"m133","seq":133,"kind":"toernooi","season":"22/23","date":"2023-06-10","tour":"t3","team":"","opp":"RCH","oppRaw":"RCH","home":true,"gf":0,"ga":9,"goals":0,"type":"","note":""},{"id":"m134","seq":134,"kind":"toernooi","season":"23/24","date":"2023-10-21","tour":"t4","team":"","opp":"Forza","oppRaw":"Forza","home":true,"gf":6,"ga":1,"goals":2,"type":"","note":""},{"id":"m135","seq":135,"kind":"toernooi","season":"23/24","date":"2023-10-21","tour":"t4","team":"","opp":"DSK","oppRaw":"DSK","home":false,"gf":6,"ga":1,"goals":3,"type":"","note":""},{"id":"m136","seq":136,"kind":"toernooi","season":"23/24","date":"2023-10-21","tour":"t4","team":"","opp":"ADO'20","oppRaw":"ADO'20","home":true,"gf":1,"ga":0,"goals":0,"type":"","note":""},{"id":"m137","seq":137,"kind":"toernooi","season":"23/24","date":"2024-06-01","tour":"t5","team":"","opp":"DSK","oppRaw":"DSK","home":true,"gf":0,"ga":3,"goals":0,"type":"","note":""},{"id":"m138","seq":138,"kind":"toernooi","season":"23/24","date":"2024-06-01","tour":"t5","team":"","opp":"HEDW","oppRaw":"HEDW","home":true,"gf":1,"ga":1,"goals":1,"type":"","note":""},{"id":"m139","seq":139,"kind":"toernooi","season":"23/24","date":"2024-06-01","tour":"t5","team":"","opp":"SV Alliance (intern)","oppRaw":"JO9-3","home":true,"gf":1,"ga":0,"goals":0,"type":"","note":""},{"id":"m140","seq":140,"kind":"toernooi","season":"24/25","date":"2025-06-14","tour":"t6","team":"","opp":"AMVJ","oppRaw":"AMVJ 10-1","home":true,"gf":1,"ga":2,"goals":1,"type":"","note":"Groot veld"},{"id":"m141","seq":141,"kind":"toernooi","season":"24/25","date":"2025-06-14","tour":"t6","team":"","opp":"Bloemendaal","oppRaw":"Bloemendaal JO10-1","home":true,"gf":2,"ga":2,"goals":1,"type":"","note":"Groot veld"},{"id":"m142","seq":142,"kind":"toernooi","season":"24/25","date":"2025-06-14","tour":"t6","team":"","opp":"HBC","oppRaw":"HBC JO10-1","home":true,"gf":4,"ga":2,"goals":2,"type":"","note":"Groot veld"},{"id":"m143","seq":143,"kind":"toernooi","season":"24/25","date":"2025-06-15","tour":"t7","team":"10-7","opp":"Overbos","oppRaw":"Overbos 10-5","home":true,"gf":3,"ga":6,"goals":3,"type":"","note":""},{"id":"m144","seq":144,"kind":"toernooi","season":"24/25","date":"2025-06-15","tour":"t7","team":"10-7","opp":"ZOB","oppRaw":"ZOB 10-4","home":true,"gf":9,"ga":0,"goals":5,"type":"","note":""},{"id":"m145","seq":145,"kind":"toernooi","season":"24/25","date":"2025-06-15","tour":"t7","team":"10-7","opp":"ADO'20","oppRaw":"ADO'20 10-3","home":true,"gf":3,"ga":5,"goals":3,"type":"","note":""},{"id":"m146","seq":146,"kind":"toernooi","season":"25/26","date":"2026-01-17","tour":"t8","team":"JO11-2","opp":"Zwanenburg","oppRaw":"Zwanenburg JO11-2","home":true,"gf":1,"ga":0,"goals":0,"type":"","note":""},{"id":"m147","seq":147,"kind":"toernooi","season":"25/26","date":"2026-01-17","tour":"t8","team":"JO11-2","opp":"SCPB","oppRaw":"SCPB JO11-5","home":true,"gf":1,"ga":2,"goals":0,"type":"","note":""},{"id":"m148","seq":148,"kind":"toernooi","season":"25/26","date":"2026-01-17","tour":"t8","team":"JO11-2","opp":"SV Alliance (intern)","oppRaw":"SV Alliance JO11-3","home":true,"gf":2,"ga":0,"goals":1,"type":"","note":""},{"id":"m149","seq":149,"kind":"toernooi","season":"25/26","date":"2026-01-17","tour":"t8","team":"JO11-2","opp":"SCPB","oppRaw":"SCPB JO11-4","home":true,"gf":0,"ga":0,"goals":0,"type":"","note":""},{"id":"m150","seq":150,"kind":"toernooi","season":"25/26","date":"2026-01-17","tour":"t8","team":"JO11-2","opp":"Atletico Amsterdam","oppRaw":"Atletico Amsterdam JO11-1","home":true,"gf":3,"ga":1,"goals":2,"type":"","note":"Beker gewonnen!!"},{"id":"m151","seq":151,"kind":"toernooi","season":"25/26","date":"2026-04-04","tour":"t9","team":"JO11-3","opp":"ADO'20","oppRaw":"ADO 20 JO 11-2","home":false,"gf":1,"ga":1,"goals":0,"type":"","note":""},{"id":"m152","seq":152,"kind":"toernooi","season":"25/26","date":"2026-04-04","tour":"t9","team":"JO11-3","opp":"Hillegom","oppRaw":"Hillegom JO11-3","home":false,"gf":2,"ga":0,"goals":0,"type":"","note":""},{"id":"m153","seq":153,"kind":"toernooi","season":"25/26","date":"2026-04-04","tour":"t9","team":"JO11-3","opp":"FC Lisse","oppRaw":"FC Lisse JO11-3","home":false,"gf":1,"ga":1,"goals":1,"type":"","note":""},{"id":"m154","seq":154,"kind":"toernooi","season":"25/26","date":"2026-04-04","tour":"t9","team":"JO11-3","opp":"E.M.M. 21","oppRaw":"E.M.M. 21 JO11-2","home":false,"gf":3,"ga":0,"goals":2,"type":"","note":"Beker gewonnen!!"},{"id":"m155","seq":155,"kind":"toernooi","season":"25/26","date":"2026-05-15","tour":"t10","team":"JO11-3","opp":"ARC","oppRaw":"ARC JO11-3","home":false,"gf":0,"ga":0,"goals":0,"type":"","note":""},{"id":"m156","seq":156,"kind":"toernooi","season":"25/26","date":"2026-05-15","tour":"t10","team":"JO11-3","opp":"Alphia","oppRaw":"Alphia","home":false,"gf":0,"ga":3,"goals":0,"type":"","note":""},{"id":"m157","seq":157,"kind":"toernooi","season":"25/26","date":"2026-05-15","tour":"t10","team":"JO11-3","opp":"OSM","oppRaw":"OSM","home":false,"gf":1,"ga":3,"goals":0,"type":"","note":""},{"id":"m158","seq":158,"kind":"toernooi","season":"25/26","date":"2026-05-15","tour":"t10","team":"JO11-3","opp":"ARC","oppRaw":"ARC JO11-5","home":false,"gf":1,"ga":2,"goals":0,"type":"","note":""},{"id":"m159","seq":159,"kind":"toernooi","season":"25/26","date":"2026-05-15","tour":"t10","team":"JO11-3","opp":"DSO","oppRaw":"DSO","home":false,"gf":2,"ga":1,"goals":1,"type":"","note":""},{"id":"m160","seq":160,"kind":"toernooi","season":"25/26","date":"2026-06-06","tour":"t11","team":"JO11-2","opp":"ZOB","oppRaw":"ZOB JO11-1","home":false,"gf":1,"ga":1,"goals":0,"type":"","note":""},{"id":"m161","seq":161,"kind":"toernooi","season":"25/26","date":"2026-06-06","tour":"t11","team":"JO11-2","opp":"CSV BOL","oppRaw":"CSV BOL JO11-1","home":false,"gf":0,"ga":0,"goals":0,"type":"","note":""},{"id":"m162","seq":162,"kind":"toernooi","season":"25/26","date":"2026-06-06","tour":"t11","team":"JO11-2","opp":"AFC'34","oppRaw":"AFC'34 JO11-4","home":false,"gf":3,"ga":0,"goals":0,"type":"","note":"Beker gewonnen!!"},{"id":"m163","seq":163,"kind":"toernooi","season":"25/26","date":"2026-06-13","tour":"t12","team":"JO11-2","opp":"SV Hoofddorp","oppRaw":"Hoofdorp JO11-8","home":true,"gf":1,"ga":1,"goals":0,"type":"","note":""},{"id":"m164","seq":164,"kind":"toernooi","season":"25/26","date":"2026-06-13","tour":"t12","team":"JO11-2","opp":"BSM","oppRaw":"BSM JO11-1","home":false,"gf":5,"ga":0,"goals":1,"type":"","note":""},{"id":"m165","seq":165,"kind":"toernooi","season":"25/26","date":"2026-06-13","tour":"t12","team":"JO11-2","opp":"VV Schoten","oppRaw":"VV Schoten JO10-1","home":true,"gf":5,"ga":0,"goals":0,"type":"","note":""},{"id":"m166","seq":166,"kind":"toernooi","season":"25/26","date":"2026-06-13","tour":"t12","team":"JO11-2","opp":"SV Hoofddorp","oppRaw":"Hoofdorp JO11-8","home":true,"gf":4,"ga":0,"goals":0,"type":"","note":"Beker gewonnen!!"}],"tours":[{"id":"t1","date":"2023-05-27","name":"KiKa Toernooi","season":"22/23","club":"SV Alliance (intern)"},{"id":"t2","date":"2023-06-03","name":"Zuurkool toernooi","season":"22/23","club":"LSVV"},{"id":"t3","date":"2023-06-10","name":"Geel Wit toernooi","season":"22/23","club":"Geel-Wit"},{"id":"t4","date":"2023-10-21","name":"Toernooi","season":"23/24","club":"DSK"},{"id":"t5","date":"2024-06-01","name":"KiKa Toernooi","season":"23/24","club":"SV Alliance (intern)"},{"id":"t6","date":"2025-06-14","name":"KiKa Toernooi","season":"24/25","club":"SV Alliance (intern)"},{"id":"t7","date":"2025-06-15","name":"KiKa Toernooi","season":"24/25","club":"SV Alliance (intern)"},{"id":"t8","date":"2026-01-17","name":"Haarlemmermeer Cup","season":"25/26","club":"SCPB"},{"id":"t9","date":"2026-04-04","name":"Hillegom Cup","season":"25/26","club":"Hillegom"},{"id":"t10","date":"2026-05-15","name":"ARC Heitinga Toernooi","season":"25/26","club":"ARC"},{"id":"t11","date":"2026-06-06","name":"LSVV Zuurkool toernooi","season":"25/26","club":"LSVV"},{"id":"t12","date":"2026-06-13","name":"BSM CUP","season":"25/26","club":"BSM"}]};
+const CANON = {"dss": "DSS", "bsm": "BSM", "geelwit": "Geel-Wit", "geel wit": "Geel-Wit", "geel-wit": "Geel-Wit", "onze gezellen": "Onze Gezellen", "hoofddorp": "SV Hoofddorp", "hoofdorp": "SV Hoofddorp", "sv hoofddorp": "SV Hoofddorp", "velsen": "RKVV Velsen", "rkvv velsen": "RKVV Velsen", "rkvv dem": "DEM", "dem": "DEM", "hillegom": "Hillegom", "hilllegom": "Hillegom", "haarlem kennermeland": "Haarlem Kennemerland", "haarlem kennemerland": "Haarlem Kennemerland", "alphia": "Alphia", "alfia": "Alphia", "ado 20": "ADO'20", "ado'20": "ADO'20", "e.m.m. 21": "E.M.M. 21", "kagia": "Kagia", "zwanenburg.": "Zwanenburg", "zwanenburg": "Zwanenburg", "vv schoten": "VV Schoten", "vvc": "VVC", "svij": "SVIJ", "diosj": "DIOS", "dios": "DIOS", "amvj": "AMVJ", "csv bol": "CSV BOL", "afc'34": "AFC'34", "arc": "ARC", "sporting adrichem": "Sporting Adrichem", "spaarnwoude": "Spaarnwoude", "scpb": "SCPB", "hfc": "KHFC", "khfc": "KHFC", "sva": "SVA"};
+const OWN = 'SV Alliance (intern)';
+const dn = n => n===OWN ? 'Alliance onderling' : n;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S = {matches:[], tours:[], upcoming:[], logo:null, logos:{}, standen:[]};
+let openUp=null, finUp=null;
+let api = null, mode = 'local', loaded = {m:false,t:false};
+let editing = null, pending = null, openOpp = null, logoTarget = null, oppSort = {k:'n',d:-1}, filt = {season:'all',kind:'competitie',q:''};
+const seasonOrder = s => +s.split('/')[0];
+/* chronologisch: per seizoen eerst wedstrijden zonder datum (volgorde van invoer), daarna alles met datum op datum */
+const chron = (a,b) => seasonOrder(a.season)-seasonOrder(b.season) || (a.date&&b.date? a.date.localeCompare(b.date):0) || (a.seq||0)-(b.seq||0);
+const slug = s => String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+/* ---------- assists, fases, standen ---------- */
+/* assists worden pas vanaf seizoen 26/27 bijgehouden; daarvoor tonen we "–" (niet bijgehouden) */
+const ASSIST_FROM = 26;
+const trackA = m => seasonOrder(m.season) >= ASSIST_FROM;
+/* fases per seizoen (datums van en tot en met). Klasse wordt afgeleid uit de wedstrijden of de stand. */
+const FASES = {'26/27':[
+  {f:1, from:'2026-07-01', to:'2026-10-20'},
+  {f:2, from:'2026-10-21', to:'2026-12-31'},
+  {f:3, from:'2027-01-01', to:'2027-03-31'},
+  {f:4, from:'2027-04-01', to:'2027-07-31'}]};
+const tourWon = id => { const t=S.tours.find(x=>x.id===id); return !!(t&&t.won) || S.matches.some(m=>m.tour===id&&/beker gewonnen/i.test(m.note||'')); };
+const curSeason = () => S.matches.reduce((a,m)=>!a||seasonOrder(m.season)>seasonOrder(a)?m.season:a, '');
+const faseMatches = (s,F) => S.matches.filter(m=>m.season===s && m.kind==='competitie' && m.date && m.date>=F.from && m.date<=F.to);
+const ownTeam = m => m.type!=='invallen' && m.type!=='Oefenwedstrijd';
+const standOf = (s,f) => S.standen.find(x=>x.season===s && +x.fase===+f);
+function faseLabel(s,F){
+  const cnt={}; faseMatches(s,F).forEach(m=>{ const k=(m.type||'').match(/(\d)e klasse/i); if(k) cnt[k[1]]=(cnt[k[1]]||0)+1; });
+  let k=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+  if(!k){ const st=standOf(s,F.f), mm=st&&(st.title||'').match(/(\d)e klasse/i); if(mm) k=mm[1]; }
+  return `Fase ${F.f}`+(k?` – ${k}e klasse`:'');
+}
+/* stand sorteren zoals de KNVB: minste verliespunten, dan meeste punten, doelsaldo, meeste doelpunten voor */
+function standRows(st){
+  const R=(st.rows||[]).map((r,i)=>({...r,i,p:3*r.w+r.d,lost:3*r.g-(3*r.w+r.d),sd:r.gf-r.ga}));
+  R.sort((a,b)=>a.lost-b.lost||b.p-a.p||b.sd-a.sd||b.gf-a.gf||a.i-b.i);
+  R.forEach((r,i)=>r.pos=i+1); return R;
+}
+function curStand(){ const s=curSeason(); const L=S.standen.filter(x=>x.season===s).sort((a,b)=>b.fase-a.fase); return L[0]||null; }
+const teamLogo = (t,size) => t==='own' ? ownLogo(size) : oppLogo(t,size);
+const teamName = r => r.t==='own' ? "Alliance '22" : (r.name||r.t);
+let standSel=null, standEdit=false, seasonView=null, faseView=null;
+function standTable(st,compact){
+  const R=standRows(st), me=R.find(r=>r.t==='own');
+  let rows=R; if(compact&&me){ const i=me.pos-1; rows=R.slice(Math.max(0,Math.min(i-1,R.length-3)), Math.max(0,Math.min(i-1,R.length-3))+3); }
+  if(standEdit&&!compact){ const opt=R.map(r=>`<option value="${r.i}">${esc(teamName(r))}</option>`).join('');
+    return `<div class="stform"><h3>Uitslag toevoegen</h3><div class="grid"><div><label for="su_h">Thuisploeg</label><select id="su_h">${opt}</select></div><div><label for="su_a">Uitploeg</label><select id="su_a">${opt}</select></div><div><label for="su_hg">Doelpunten thuis</label><input type="number" min="0" id="su_hg" inputmode="numeric"></div><div><label for="su_ag">Doelpunten uit</label><input type="number" min="0" id="su_ag" inputmode="numeric"></div></div>
+    <div class="err" id="suerr" role="alert"></div><div class="row"><button class="btn pri" id="suAdd" type="button">Uitslag verwerken en opslaan</button><button class="btn" id="stCancel" type="button">Klaar</button></div></div>
+    <details class="stman"><summary>Of pas de getallen zelf aan</summary><div class="scroll"><table class="stand"><thead><tr><th>Team</th><th>G</th><th>W</th><th>G</th><th>V</th><th>+</th><th>−</th></tr></thead><tbody>${R.map(r=>`<tr${r.t==='own'?' class="me"':''}><td><div class="tw">${teamLogo(r.t,24)}<span>${esc(teamName(r))}</span></div></td>${['g','w','d','l','gf','ga'].map(k=>`<td><input class="sti" type="number" min="0" inputmode="numeric" data-sr="${r.i}" data-sk="${k}" value="${r[k]}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="stSave" type="button">Getallen opslaan</button></div></details>`; }
+  return `<div class="scroll"><table class="stand${compact?' mini':''}"><thead><tr><th>#</th><th>Team</th><th>G</th>${compact?'':'<th>W</th><th>G</th><th>V</th>'}<th>P</th><th>D</th>${compact?'':'<th>+</th><th>−</th>'}</tr></thead><tbody>${rows.map(r=>`<tr${r.t==='own'?' class="me"':''}><td>${r.pos}</td><td><div class="tw">${teamLogo(r.t,compact?22:28)}<span>${esc(teamName(r))}</span></div></td><td>${r.g}</td>${compact?'':`<td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>`}<td><b>${r.p}</b></td><td class="${cls(r.sd)}">${sgn(r.sd)}</td>${compact?'':`<td>${r.gf}</td><td>${r.ga}</td>`}</tr>`).join('')}</tbody></table></div>`;
+}
+function renderStand(){
+  const el=$('#p-stand'); const st=S.standen.find(x=>x.id===standSel)||curStand();
+  if(!st){ el.innerHTML='<div class="card empty">Nog geen stand.</div>'; return; }
+  const L=S.standen.filter(x=>x.season===st.season).sort((a,b)=>a.fase-b.fase);
+  el.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><h2 style="margin:0">Stand fase ${st.fase}</h2>${standEdit?'':'<button class="btn sm" id="stEdit" type="button">Stand bijwerken</button>'}</div>
+  <p class="note" style="margin-top:0">${esc(st.title||'')} · seizoen ${st.season}${st.updated?' · bijgewerkt '+fmtDate(st.updated):''}</p>
+  ${L.length>1?`<div class="row" style="margin-bottom:10px">${L.map(x=>`<button class="btn sm${x.id===st.id?' pri':''}" data-stand="${esc(x.id)}" type="button">Fase ${x.fase}</button>`).join('')}</div>`:''}
+  ${standTable(st,false)}
+  <p class="note">Gesorteerd zoals de KNVB: eerst het minste aantal verliespunten, dan punten en doelsaldo. ${standEdit?'Punten en doelsaldo rekent de app zelf uit.':''}</p></div>`;
+}
+/* ---------- feestmoment ---------- */
+function milestonesCrossed(b,a){
+  const out=[], step=(x,s)=>Math.floor(x/s);
+  if(step(a.g,50)>step(b.g,50) && a.g>=100) out.push(`${step(a.g,50)*50} GOALS!`);
+  if(step(a.n,50)>step(b.n,50)) out.push(`${step(a.n,50)*50} WEDSTRIJDEN!`);
+  return out;
+}
+function celebrate(lines){
+  if(!lines.length) return;
+  const el=$('#party'); el.hidden=false;
+  el.innerHTML=`<canvas id="confetti" aria-hidden="true"></canvas><div class="pbox" role="dialog" aria-label="Mijlpaal"><div class="pic">🎉</div><div class="pt">${lines.map(esc).join('<br>')}</div><div class="ps">Wat een mijlpaal, Ben!</div><button class="btn pri" id="partyClose" type="button">Feest! 🥳</button></div>`;
+  const c=$('#confetti'), x=c.getContext&&c.getContext('2d'); if(!x) return;
+  const W=c.width=innerWidth, H=c.height=innerHeight, col=['#FFD43B','#16883F','#ffffff','#2FB45B','#ffb703'];
+  const P=Array.from({length:160},()=>({x:Math.random()*W,y:-20-Math.random()*H,v:2+Math.random()*3,r:4+Math.random()*5,a:Math.random()*6,s:(Math.random()-.5)*.2,c:col[Math.floor(Math.random()*col.length)]}));
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches; let t0=performance.now();
+  (function f(t){ if(el.hidden) return; x.clearRect(0,0,W,H); P.forEach(p=>{ if(!reduce){ p.y+=p.v; p.a+=p.s; p.x+=Math.sin(p.a)*1.2; } if(p.y>H) p.y=-10; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillStyle=p.c; x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); x.restore(); }); if(!reduce&&t-t0<9000) requestAnimationFrame(f); })(t0);
+}
+/* ---------- grafiek goals per seizoen ---------- */
+function seasonChart(){
+  const ss=[...new Set(S.matches.map(m=>m.season))].sort((a,b)=>seasonOrder(a)-seasonOrder(b)), cs=ss[ss.length-1];
+  if(ss.length<2) return '';
+  const D=ss.map(s=>{ const L=S.matches.filter(m=>m.season===s); return {s,g:L.reduce((a,m)=>a+(m.goals||0),0),n:L.length}; });
+  const W=560,H=210,pl=8,pr=8,pt=26,pb=40, mx=Math.max(...D.map(d=>d.g))||1, bw=(W-pl-pr)/D.length, bar=Math.min(56,bw*.56);
+  const y=v=>pt+(H-pt-pb)*(1-v/mx);
+  const grid=[0,.5,1].map(f=>{ const v=Math.round(mx*f), yy=y(v); return `<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" class="cg"/>`; }).join('');
+  const bars=D.map((d,i)=>{ const cx=pl+bw*i+bw/2, x0=cx-bar/2, y0=y(d.g), h=Math.max(0,H-pb-y0), cur=d.s===cs, r=Math.min(4,h);
+    const path=`M${x0},${H-pb} V${y0+r} Q${x0},${y0} ${x0+r},${y0} H${x0+bar-r} Q${x0+bar},${y0} ${x0+bar},${y0+r} V${H-pb} Z`;
+    return `<g class="cb" tabindex="0"><title>Seizoen ${d.s}${cur?' (bezig)':''}: ${d.g} goals in ${d.n} wedstrijden, ${dec(d.n?d.g/d.n:0)} per wedstrijd</title><rect x="${cx-bw/2}" y="${pt-20}" width="${bw}" height="${H-pt+20}" fill="transparent"/><path d="${path}" class="${cur?'cbar cur':'cbar'}"/>
+      <text x="${cx}" y="${y0-7}" text-anchor="middle" class="cv">${d.g}</text><text x="${cx}" y="${H-pb+17}" text-anchor="middle" class="cl">${d.s}</text><text x="${cx}" y="${H-pb+32}" text-anchor="middle" class="cs">${cur?'bezig':dec(d.n?d.g/d.n:0)+' p.w.'}</text></g>`; }).join('');
+  return `<div class="card"><h2>Goals per seizoen</h2><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Goals van Ben per seizoen">
+    <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" class="hbg"/><line x1="0" y1="0" x2="0" y2="6" class="hln"/></pattern></defs>${grid}${bars}</svg>
+    <p class="note" style="margin:4px 0 0">Onder elk seizoen: goals per wedstrijd. Het gestreepte blok is het seizoen dat nog loopt. Tik of hover op een balk voor details.</p></div>`;
+}
+/* ---------- records ---------- */
+function streak(C,ok){ let b={n:0},c={n:0}; for(const m of C){ if(ok(m)){ if(!c.n) c.s=m; c.n++; c.e=m; if(c.n>b.n) b={...c}; } else c={n:0}; } return b; }
+const mdesc = (m,ns) => `${ns?'':m.gf+'–'+m.ga+' '}${m.home!==false?'thuis':'uit'} tegen ${esc(dn(m.opp))} · ${m.date?fmtDate(m.date):'seizoen '+m.season}`;
+function renderRecords(){
+  const M=S.matches; if(!M.length){ $('#p-records').innerHTML=''; return; }
+  const C=M.slice().sort(chron), real=M.filter(m=>m.opp!==OWN), A=M.filter(trackA), R=[];
+  const top=(L,f)=>L.slice().sort((a,b)=>f(b)-f(a))[0];
+  const card=(k,v,s,icon)=>R.push(`<div class="rec"><div class="ri">${icon}</div><div class="rk">${k}</div><div class="rv">${v}</div><div class="rs">${s}</div></div>`);
+  const z=top(real,m=>m.gf-m.ga); if(z) card('Grootste zege',`${z.gf}–${z.ga}`,mdesc(z,1),'🏆');
+  const l=top(real,m=>m.ga-m.gf); if(l&&l.ga>l.gf) card('Zwaarste nederlaag',`${l.gf}–${l.ga}`,mdesc(l,1),'🌧️');
+  const g=top(M,m=>m.goals||0); if(g) card('Meeste goals in één wedstrijd',g.goals,mdesc(g),'⚽');
+  const a=top(A,m=>m.assists||0); if(a&&a.assists) card('Meeste assists in één wedstrijd',a.assists,mdesc(a)+' · vanaf 26/27','👟');
+  const b=top(A,m=>(m.goals||0)+(m.assists||0)); if(b&&(b.goals||0)+(b.assists||0)) card('Meest betrokken bij goals',`${(b.goals||0)+(b.assists||0)}`,`${b.goals||0} goals + ${b.assists||0} assists · ${mdesc(b)}`,'🎯');
+  const s1=streak(C,m=>(m.goals||0)>0); if(s1.n>1) card('Langste reeks met een goal',`${s1.n} wedstrijden`,`van ${esc(dn(s1.s.opp))} (${s1.s.season}) t/m ${esc(dn(s1.e.opp))} (${s1.e.season})`,'🔥');
+  const s2=streak(C,m=>m.gf>=m.ga); if(s2.n>1) card('Langste reeks ongeslagen',`${s2.n} wedstrijden`,`van ${esc(dn(s2.s.opp))} (${s2.s.season}) t/m ${esc(dn(s2.e.opp))} (${s2.e.season})`,'🛡️');
+  const s3=streak(C,m=>m.gf>m.ga); if(s3.n>1) card('Langste winstreeks',`${s3.n} wedstrijden`,`van ${esc(dn(s3.s.opp))} (${s3.s.season}) t/m ${esc(dn(s3.e.opp))} (${s3.e.season})`,'📈');
+  const se=[...new Set(M.map(m=>m.season))].map(s=>{ const L=M.filter(m=>m.season===s); return {s,n:L.length,g:L.reduce((x,m)=>x+(m.goals||0),0)}; });
+  const sg=top(se,x=>x.g); if(sg) card('Meeste goals in een seizoen',sg.g,`seizoen ${sg.s} · ${sg.n} wedstrijden`,'📅');
+  const sa=top(se.filter(x=>x.n>=10),x=>x.g/x.n); if(sa) card('Beste gemiddelde in een seizoen',dec(sa.g/sa.n),`goals per wedstrijd · seizoen ${sa.s}`,'⭐');
+  const sp=top(M,m=>m.gf+m.ga); if(sp) card('Meeste doelpunten in één wedstrijd',sp.gf+sp.ga,mdesc(sp),'🎢');
+  $('#p-records').innerHTML=`<div class="card"><h2>Records</h2><div class="recs">${R.join('')}</div><p class="note">Alle wedstrijden tellen mee, ook toernooien en invalbeurten. Grootste zege en nederlaag zonder Alliance onderling. Hattricks en bekers vind je in de weetjes en bij Seizoenen. Assists pas vanaf seizoen 26/27.</p></div>`;
+}
+
+
+/* ---------- berekeningen ---------- */
+function rec(ms){ const r={n:ms.length,w:0,d:0,l:0,gf:0,ga:0,g:0,a:0};
+  for(const m of ms){ r.gf+=m.gf; r.ga+=m.ga; r.g+=m.goals||0; if(trackA(m)) r.a+=m.assists||0; if(m.gf>m.ga) r.w++; else if(m.gf<m.ga) r.l++; else r.d++; }
+  r.saldo=r.gf-r.ga; r.avg=r.n? r.g/r.n:0; return r; }
+const sgn = n => (n>0?'+':n<0?'−':'') + Math.abs(n);
+const cls = n => n>0?'pos':n<0?'neg':'';
+const dec = n => n.toFixed(2).replace('.',',');
+const res = m => m.gf>m.ga?'W':m.gf<m.ga?'V':'G';
+function seasonOf(iso){ const [y,mo]=iso.split('-').map(Number); const a = mo>=8? y : y-1; return String(a).slice(2)+'/'+String(a+1).slice(2); }
+function factsHtml(n,excl){
+  const ms=S.matches.filter(m=>m.opp===n && m.id!==excl).sort(chron);
+  const L=[];
+  if(!ms.length) L.push('Nog nooit eerder gespeeld tegen deze tegenstander.');
+  else{
+    const r=rec(ms), plural=(k,a,b)=>k===1?a:b;
+    L.push(`${r.n} ${plural(r.n,'wedstrijd','wedstrijden')} gespeeld: ${r.w} gewonnen, ${r.d} gelijk, ${r.l} verloren (doelsaldo ${sgn(r.saldo)}, ${r.gf}-${r.ga}).`);
+    if(r.w===0) L.push(`Ben won nog nooit van deze tegenstander${r.l===0?' (ook nog niet verloren)':''}.`);
+    else if(r.l===0) L.push('Ben verloor nog nooit van deze tegenstander.');
+    else if(r.w===r.n) L.push('Ben won altijd van deze tegenstander.');
+    L.push(r.g? `Ben scoorde ${r.g} ${plural(r.g,'goal','goals')} in ${r.n} ${plural(r.n,'wedstrijd','wedstrijden')}.` : `Ben scoorde nog niet tegen deze tegenstander (${r.n} ${plural(r.n,'wedstrijd','wedstrijden')}).`);
+    const b=ms.slice().sort((x,y)=>(y.gf-y.ga)-(x.gf-x.ga))[0];
+    if(b.gf>b.ga && ms.length>1) L.push(`Grootste zege: ${b.gf}-${b.ga} (seizoen ${b.season}).`);
+    const l=ms[ms.length-1];
+    L.push(`Laatste wedstrijd: seizoen ${l.season}${l.date?' ('+fmtDate(l.date)+')':''}${l.kind==='toernooi'?', toernooi':''}, uitslag ${l.gf}-${l.ga} (${res(l)==='W'?'winst':res(l)==='V'?'verlies':'gelijk'})${l.goals?`, Ben scoorde ${l.goals}`:''}.`);
+  }
+  return `<div class="facts"><div class="fh">${oppLogo(n,36)}<b>Weetjes over ${esc(n)}</b></div><ul>${L.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
+}
+function oppFacts(){
+  const box=$('#oppFacts'); if(!box) return; const raw=$('#f_opp').value.trim(), n=normOpp(raw);
+  box.innerHTML = (!raw||!n||n===OWN)? '' : factsHtml(n, editing);
+}
+function standPos(team){ const st=curStand(); if(!st) return null; const r=standRows(st).find(x=>x.t===team); return r?{pos:r.pos,n:st.rows.length,f:st.fase}:null; }
+function renderAgenda(){
+  const el=$('#p-agenda'); const ups=S.upcoming.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if(!ups.length){ el.innerHTML='<div class="card"><p class="note" style="margin:0">Geen geplande wedstrijden. Kies bij Toevoegen "Gepland (nog geen uitslag)" om een wedstrijd in te plannen.</p></div>'; return; }
+  const now=new Date(), td=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+  const until=iso=>{ if(!iso) return ''; const [y,m,d]=iso.split('-').map(Number), n=Math.round((Date.UTC(y,m-1,d)-td)/864e5); return n===0?'vandaag':n===1?'morgen':n>1?`over ${n} dagen`:''; };
+  el.innerHTML=ups.map((u,i)=>{ const feat=i===0, key=feat?'-'+u.id:u.id, show=feat?openUp!==key:openUp===key, sp=standPos(u.opp), un=until(u.date);
+    return `<div class="card up${feat?' feat':''}" data-uid="${esc(u.id)}">
+    ${feat?`<div class="feath">Volgende wedstrijd${un?' · '+un:''}</div>`:''}
+    <div class="mc-h" data-upopen="${esc(key)}" role="button" tabindex="0">${oppLogo(u.opp,feat?60:48)}<div class="nm">${esc(dn(u.opp))}<div class="when">${fmtDate(u.date)} · ${u.home===false?'Uit':'Thuis'}${u.type?' · '+esc(u.type):''}${sp?` · nr. ${sp.pos} van ${sp.n} in fase ${sp.f}`:''}</div></div><span class="badge">${show?'Verberg':'Weetjes'}</span></div>
+    ${u.note?`<p class="note" style="margin:8px 0 0">${esc(u.note)}</p>`:''}
+    ${show?factsHtml(u.opp):''}
+    ${finUp===u.id?`<div class="fin"><div><label>Alliance</label><input type="number" min="0" id="fin_gf" inputmode="numeric"></div><div><label>Tegenstander</label><input type="number" min="0" id="fin_ga" inputmode="numeric"></div><div><label>Goals Ben</label><input type="number" min="0" id="fin_g" inputmode="numeric" value="0"></div><div><label>Assists Ben</label><input type="number" min="0" id="fin_a" inputmode="numeric" value="0"></div></div><div class="err" id="finerr" role="alert"></div><div class="row" style="margin-top:8px"><button class="btn pri" data-finok="${esc(u.id)}" type="button">Wedstrijd afronden</button><button class="btn" data-fincancel="1" type="button">Annuleer</button></div>`
+      :`<div class="row" style="margin-top:10px"><button class="btn pri" data-fin="${esc(u.id)}" type="button">Uitslag invullen</button><button class="btn" data-delup="${esc(u.id)}" type="button">Verwijder</button></div>`}
+  </div>`; }).join('');
+}
+function renderHomeRow(){
+  const L5=S.matches.slice().sort(chron).slice(-5), st=curStand();
+  const vorm=L5.length?`<div class="card hv"><h3>Vorm <span class="badge">laatste ${L5.length}</span></h3><div class="vorm">${L5.map(m=>`<span class="vb ${res(m)}" title="${esc(m.gf+'–'+m.ga+' tegen '+dn(m.opp))}"><b>${res(m)}</b><small>${esc(m.gf+'–'+m.ga)}</small></span>`).join('')}</div><p class="note" style="margin:8px 0 0">Links de oudste, rechts de laatste wedstrijd.</p></div>`:'';
+  const stand=st?`<div class="card hv stmini" data-stand="${esc(st.id)}" role="button" tabindex="0"><h3>Stand fase ${st.fase} <span class="badge">${esc(st.title||'')}</span></h3>${standTable(st,true)}<div class="more">Hele stand →</div></div>`:'';
+  $('#homeRow').innerHTML=vorm+stand;
+}
+function seasonStats(L){ const r=rec(L), a=L.filter(trackA); return {...r, ast:a.length?a.reduce((s,m)=>s+(m.assists||0),0):null}; }
+function renderSeasons(){
+  const el=$('#p-seizoen');
+  if(seasonView&&FASES[seasonView]){ el.innerHTML=renderSeasonDetail(seasonView); return; }
+  const seasons=[...new Set(S.matches.map(m=>m.season))].sort((a,b)=>seasonOrder(b)-seasonOrder(a)), curS=seasons[0];
+  const rows=seasons.map(s=>{ const all=S.matches.filter(m=>m.season===s), c=rec(all.filter(m=>m.kind==='competitie')), t=rec(all.filter(m=>m.kind==='toernooi')), r=seasonStats(all), cl=!!FASES[s];
+    return `<tr class="${s===curS?'cur':''}${cl?' click':''}"${cl?` data-sv="${s}" role="button" tabindex="0"`:''}><td><b>${s}</b>${s===curS?' <span class="live"><i></i>Bezig</span>':''}${cl?' <span class="badge">fases →</span>':''}</td><td>${r.n}<div class="badge">${c.n}+${t.n}</div></td><td>${r.g}<div class="badge">${c.g}+${t.g}</div></td><td>${r.ast==null?'<span class="na" title="niet bijgehouden">–</span>':r.ast}</td><td>${(()=>{const k=S.tours.filter(t=>t.season===s&&tourWon(t.id)).length; return k?k+' 🏆':'0';})()}</td><td>${dec(r.avg)}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}–${r.ga}</td><td class="${cls(r.saldo)}">${sgn(r.saldo)}</td></tr>`; }).join('');
+  const T=seasonStats(S.matches), C=rec(S.matches.filter(m=>m.kind==='competitie')), To=rec(S.matches.filter(m=>m.kind==='toernooi'));
+  el.innerHTML = seasonChart()+`<div class="card"><h2>Per seizoen</h2><div class="scroll"><table>
+    <thead><tr><th>Seizoen</th><th>Wedstr.</th><th>Goals Ben</th><th>Assists</th><th>Bekers</th><th>Gem.</th><th>W</th><th>G</th><th>V</th><th>Doelpunten</th><th>Saldo</th></tr></thead>
+    <tbody>${rows}<tr class="tot"><td>Totaal</td><td>${T.n}<div class="badge">${C.n}+${To.n}</div></td><td>${T.g}<div class="badge">${C.g}+${To.g}</div></td><td>${T.ast==null?'–':T.ast+'*'}</td><td>${S.tours.filter(t=>tourWon(t.id)).length} 🏆</td><td>${dec(T.avg)}</td><td>${T.w}</td><td>${T.d}</td><td>${T.l}</td><td>${T.gf}–${T.ga}</td><td class="${cls(T.saldo)}">${sgn(T.saldo)}</td></tr></tbody></table></div>
+    <p class="note">Onder wedstrijden en goals: competitie + toernooien. W = winst, G = gelijk, V = verloren. Gem. = goals Ben per wedstrijd. <b>Assists</b> worden pas bijgehouden vanaf seizoen 26/27; een streepje (–) betekent "niet bijgehouden", niet nul. *Totaal assists = alleen 26/27. Bekers = gewonnen toernooien. Tik op een seizoen met "fases →" voor de fases.</p></div>`;
+}
+function statRow(label,L,attr){ const r=seasonStats(L);
+  return `<tr class="${attr?'click':''}"${attr||''}><td><b>${label}</b>${attr?' <span class="badge">→</span>':''}</td><td>${r.n}</td><td>${r.g}</td><td>${r.ast==null?'–':r.ast}</td><td>${r.n?dec(r.avg):'–'}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}–${r.ga}</td><td class="${cls(r.saldo)}">${r.n?sgn(r.saldo):'–'}</td></tr>`; }
+const statHead='<thead><tr><th></th><th>Wedstr.</th><th>Goals</th><th>Assists</th><th>Gem.</th><th>W</th><th>G</th><th>V</th><th>Doelpunten</th><th>Saldo</th></tr></thead>';
+function renderSeasonDetail(s){
+  const FS=FASES[s], all=S.matches.filter(m=>m.season===s), tours=all.filter(m=>m.kind==='toernooi');
+  const inF=new Set(FS.flatMap(F=>faseMatches(s,F).map(m=>m.id))), loose=all.filter(m=>m.kind==='competitie'&&!inF.has(m.id));
+  const back=`<button class="back" data-sv="${faseView!=null?s:''}" type="button">← ${faseView!=null?'Seizoen '+s:'Alle seizoenen'}</button>`;
+  if(faseView!=null){
+    const isT=faseView==='t', F=isT?null:FS.find(x=>x.f===+faseView), L=(isT?tours:faseMatches(s,F)).slice().sort((a,b)=>chron(b,a)), st=isT?null:standOf(s,F.f);
+    const title=isT?'Toernooien':faseLabel(s,F);
+    return back+`<div class="card"><h2>${esc(title)} <span class="badge">seizoen ${s}</span></h2>${isT?'':`<p class="note" style="margin-top:0">${fmtDate(F.from)} t/m ${fmtDate(F.to)} · competitie, invalbeurten en oefenwedstrijden</p>`}
+      <div class="scroll"><table>${statHead}<tbody>${statRow('Totaal',L)}${isT?'':statRow('Eigen team',L.filter(ownTeam))+(L.some(m=>m.type==='invallen')?statRow('Invallen',L.filter(m=>m.type==='invallen')):'')+(L.some(m=>m.type==='Oefenwedstrijd')?statRow('Oefen',L.filter(m=>m.type==='Oefenwedstrijd')):'')}</tbody></table></div></div>
+      ${st?`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:6px"><h2 style="margin:0">Stand</h2><button class="btn sm" data-stand="${esc(st.id)}" type="button">Bijwerken / groot →</button></div><p class="note" style="margin-top:0">${esc(st.title||'')}${st.updated?' · bijgewerkt '+fmtDate(st.updated):''}</p>${standTable(st,false)}</div>`:(isT?'':'<div class="card"><p class="note" style="margin:0">Nog geen stand voor deze fase. </p></div>')}
+      ${L.length?L.map(m=>matchCard(m)).join(''):'<div class="card empty">Nog geen wedstrijden in deze fase.</div>'}`;
+  }
+  const rows=FS.map(F=>statRow(esc(faseLabel(s,F)),faseMatches(s,F),` data-fase="${F.f}" role="button" tabindex="0"`)).join('')
+    +statRow('Toernooien',tours,` data-fase="t" role="button" tabindex="0"`)+(loose.length?statRow('Zonder datum',loose):'');
+  return back+`<div class="card"><h2>Seizoen ${s} <span class="live"><i></i>Bezig</span></h2><div class="scroll"><table>${statHead}<tbody>${rows}<tr class="tot"><td>Totaal</td>${statRow('',all).replace(/^<tr[^>]*><td><b><\/b><\/td>/,'').replace(/<\/tr>$/,'')}</tr></tbody></table></div>
+    <p class="note">Per fase tellen alle competitiewedstrijden mee: ook invalbeurten en oefenwedstrijden. Tik op een fase voor de stand en de wedstrijden. </p></div>`;
+}
+function fmtDate(iso){ if(!iso) return '–'; const [y,m,d]=iso.split('-'); return d+'-'+m+'-'+y; }
+function normOpp(t){
+  let s = String(t||'').trim();
+  s = s.replace(/(?<=[A-Za-z])(JO|MO)\s?\d+-\d+/gi,'').replace(/\b(M?J?O?)\s?\d{1,2}\s?-\s?\d{1,2}\b/gi,'').replace(/\s+/g,' ').trim().replace(/^[ .]+|[ .]+$/g,'');
+  if(!s) return '';
+  if(/alliance/i.test(s)) return OWN;
+  const known = [...new Set(S.matches.map(m=>m.opp))].find(o=>o.toLowerCase()===s.toLowerCase());
+  return CANON[s.toLowerCase()] || known || s;
+}
+
+/* ---------- logo's ---------- */
+function hue(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))%360; return h; }
+function initials(n){ const w=n.replace(/[^A-Za-z0-9 ]/g,'').split(' ').filter(Boolean); if(w.length===1) return w[0].length<=4? w[0].toUpperCase() : w[0].slice(0,3).toUpperCase(); return w.slice(0,3).map(x=>x[0]).join('').toUpperCase(); }
+function ownLogo(size){
+  const inner = S.logo ? `<img alt="Alliance" src="${esc(S.logo)}">` : `<svg viewBox="0 0 64 64" width="${size}" height="${size}"><path d="M32 4 56 12v20c0 14-10 24-24 28C18 56 8 46 8 32V12z" fill="#16883F"/><text x="32" y="38" text-anchor="middle" font-family="Space Grotesk,Inter,sans-serif" font-weight="700" font-size="17" fill="#fff">A22</text></svg>`;
+  return `<span class="lg own" style="width:${size}px;height:${size}px;background:transparent;border-radius:${S.logo?'8px':'0'}">${inner}</span>`;
+}
+function oppLogo(name,size){
+  if(name===OWN) return ownLogo(size);
+  const d=S.logos[slug(name)];
+  if(d) return `<span class="lg" style="width:${size}px;height:${size}px;border-radius:8px"><img alt="${esc(name)}" src="${esc(d)}"></span>`;
+  const h=hue(name), f=Math.max(10,Math.round(size*0.32));
+  return `<span class="lg" style="width:${size}px;height:${size}px;background:hsl(${h} 42% 36%);font-size:${f}px">${esc(initials(name))}</span>`;
+}
+
+/* ---------- opslag ---------- */
+const LS='bens-wedstrijden-v2';
+function lsLoad(){ try{ const r=localStorage.getItem(LS); if(r) return JSON.parse(r);}catch(e){} return null; }
+function lsSave(){ try{ localStorage.setItem(LS, JSON.stringify({matches:S.matches,tours:S.tours,upcoming:S.upcoming,logo:S.logo,logos:S.logos,standen:S.standen})); }catch(e){} }
+function mkLocalApi(){
+  return {
+    async saveMatch(m){ const i=S.matches.findIndex(x=>x.id===m.id); if(i>=0) S.matches[i]=m; else S.matches.push(m); lsSave(); render(); },
+    async delMatch(id){ S.matches=S.matches.filter(x=>x.id!==id); lsSave(); render(); },
+    async saveUp(u){ const i=S.upcoming.findIndex(x=>x.id===u.id); if(i>=0) S.upcoming[i]=u; else S.upcoming.push(u); lsSave(); render(); },
+    async delUp(id){ S.upcoming=S.upcoming.filter(x=>x.id!==id); lsSave(); render(); },
+    async saveTour(t){ const i=S.tours.findIndex(x=>x.id===t.id); if(i>=0) S.tours[i]=t; else S.tours.push(t); lsSave(); render(); },
+    async delTour(id){ S.tours=S.tours.filter(x=>x.id!==id); S.matches=S.matches.filter(x=>x.tour!==id); lsSave(); render(); },
+    async saveLogo(d){ S.logo=d; lsSave(); render(); },
+    async saveOppLogo(k,d){ S.logos[k]=d; lsSave(); render(); },
+    async saveStand(st){ const i=S.standen.findIndex(x=>x.id===st.id); if(i>=0) S.standen[i]=st; else S.standen.push(st); lsSave(); render(); }
+  };
+}
+function mkDbApi(db){
+  return {
+    async saveMatch(m){ await db.doc('matches/'+m.id).set(m); },
+    async delMatch(id){ await db.doc('matches/'+id).delete(); },
+    async saveUp(u){ await db.doc('upcoming/'+u.id).set(u); },
+    async delUp(id){ await db.doc('upcoming/'+id).delete(); },
+    async saveTour(t){ await db.doc('tours/'+t.id).set(t); },
+    async delTour(id){ for(const m of S.matches.filter(x=>x.tour===id)) await db.doc('matches/'+m.id).delete(); await db.doc('tours/'+id).delete(); },
+    async saveLogo(d){ await db.doc('settings/logo').set({data:d}); },
+    async saveOppLogo(k,d){ await db.doc('logos/'+k).set({data:d}); },
+    async saveStand(st){ await db.doc('standen/'+st.id).set(st); }
+  };
+}
+async function init(){
+  render();
+  try{ const r=await fetch('data.json?'+Date.now(),{cache:'no-store'}); const d=await r.json();
+    S.matches=d.matches||[]; S.tours=d.tours||[]; S.upcoming=d.upcoming||[]; S.standen=d.standen||[]; S.logo=d.logo||null; S.logos=d.logos||{}; loaded={m:true,t:true}; mode='static'; api=null;
+    if(d.exported){ const e=new Date(d.exported); window.__exp=e; }
+  }catch(e){ fallback(); return; }
+  render(); if(window.__exp) $('#upd').textContent+=` · bijgewerkt ${window.__exp.toLocaleDateString('nl-NL')}`;
+}
+async function initClaude(){
+  render();
+  let db=null;
+  try{ if(window.claude && claude.use){ db = await Promise.race([claude.use('db'), new Promise(r=>setTimeout(()=>r(null),4000))]); } }catch(e){ db=null; }
+  if(db){
+    mode='db'; api=mkDbApi(db);
+    const fail = e => { fallback(); };
+    let timer=setTimeout(()=>{ $('#storeNote').textContent='Gegevens laden duurt lang; mogelijk niet bijgewerkt.'; },10000);
+    const done = () => { clearTimeout(timer); if(loaded.m&&loaded.t) $('#storeNote').textContent='Opslag: gedeelde database (op al je apparaten).'; };
+    db.collection('matches').onSnapshot(s=>{ S.matches=s.docs.map(d=>d.data()); loaded.m=true; done(); render(); }, fail);
+    db.collection('tours').onSnapshot(s=>{ S.tours=s.docs.map(d=>d.data()); loaded.t=true; done(); render(); }, fail);
+    db.collection('upcoming').onSnapshot(s=>{ S.upcoming=s.docs.map(d=>d.data()); render(); }, ()=>{});
+    db.doc('settings/logo').onSnapshot(s=>{ S.logo = s.exists ? s.data().data : null; render(); }, ()=>{});
+    db.collection('logos').onSnapshot(s=>{ const o={}; s.docs.forEach(d=>{ o[d.id]=d.data().data; }); S.logos=o; render(); }, ()=>{});
+    db.collection('standen').onSnapshot(s=>{ S.standen=s.docs.map(d=>d.data()); render(); }, ()=>{});
+  } else fallback();
+}
+function fallback(){
+  mode='local'; api=mkLocalApi();
+  const d = lsLoad() || SEED || {matches:[],tours:[]};
+  S.matches=d.matches.slice(); S.tours=d.tours.slice(); S.upcoming=(d.upcoming||[]).slice(); S.logo=d.logo||null; S.logos=d.logos||{}; S.standen=(d.standen||[]).slice(); loaded={m:true,t:true};
+  $('#storeNote').textContent='Opslag: alleen in deze browser (gedeelde opslag niet beschikbaar). Maak regelmatig een back-up.';
+  render();
+}
+
+/* ---------- weergave ---------- */
+const tile=(k,v,s,c='',big=false,go='')=>`<div class="tile ${big?'hero ':''}${c}"${go?` data-goto="${go}" role="button" tabindex="0" title="Open ${go}"`:''}><div class="k">${k}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
+function renderTiles(){
+  const r=rec(S.matches), t=rec(S.matches.filter(m=>m.kind==='toernooi')), c=rec(S.matches.filter(m=>m.kind==='competitie'));
+  $('#tilesMain').innerHTML =
+    tile('Wedstrijden',r.n,`${c.n} competitie · ${t.n} toernooi`,'',true,'wedstrijden')+
+    tile('Goals Ben',r.g,`${c.g} competitie · ${t.g} toernooi`,'',true,'wedstrijden')+
+    tile('Goals per wedstrijd',dec(r.avg),'gemiddeld','',true)+
+    tile('Tegenstanders',new Set(S.matches.map(m=>m.opp).filter(o=>o!==OWN)).size,'verschillende clubs','',true,'tegenstanders');
+  $('#tilesSub').innerHTML =
+    tile('Gewonnen',r.w,r.n?Math.round(100*r.w/r.n)+'%':'','w')+
+    tile('Gelijk',r.d,r.n?Math.round(100*r.d/r.n)+'%':'','d')+
+    tile('Verloren',r.l,r.n?Math.round(100*r.l/r.n)+'%':'','l')+
+    tile('Doelsaldo',`<span class="${cls(r.saldo)}">${sgn(r.saldo)}</span>`,`${r.gf} voor · ${r.ga} tegen`);
+  const nO=new Set(S.matches.map(m=>m.opp).filter(o=>o!==OWN)).size, nS=new Set(S.matches.map(m=>m.season)).size;
+  $('#navTiles').innerHTML=[['wedstrijden','Wedstrijden',r.n,'Alle uitslagen'],['toernooien','Toernooien',S.tours.length,'Alle toernooien'],['tegenstanders','Tegenstanders',nO,'Alle clubs'],['seizoen','Seizoenen',nS,'Per seizoen'],['records','Records','🏆','Alle uitschieters']].map(([g,k,v,s])=>`<button class="tile nav" data-goto="${g}" type="button"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s} →</div></button>`).join('');
+  renderHomeRow();
+}
+function inlineScore(m){
+  const a=ownLogo(18), b=oppLogo(m.opp,18);
+  return m.home!==false ? `${a} <b>${m.gf}–${m.ga}</b> ${b} ${esc(dn(m.opp))}` : `${b} ${esc(dn(m.opp))} <b>${m.ga}–${m.gf}</b> ${a}`;
+}
+function matchCard(m, withActs=true){
+  const own=`<div class="tm">${ownLogo(52)}</div>`;
+  const opp=`<div class="tm">${oppLogo(m.opp,52)}<span class="tn">${esc(dn(m.opp))}</span></div>`;
+  const home=m.home!==false;
+  const score = home? `${m.gf}<i>–</i>${m.ga}` : `${m.ga}<i>–</i>${m.gf}`;
+  const g=m.goals||0;
+  const balls = g>0 ? `<span class="balls" title="${g} goal${g>1?'s':''} van Ben" aria-label="${g} goal${g>1?'s':''} van Ben">${'⚽'.repeat(g)}</span>` : `<span class="balls none">Ben: geen goal</span>`;
+  const type = m.kind==='toernooi' ? ((S.tours.find(t=>t.id===m.tour)||{}).name||'Toernooi')+(m.type==='invallen'?' – toernooi – invallen'+(m.team?' ('+m.team+')':''):'') : (m.type==='invallen' ? 'Competitie – invallen'+(m.team?' ('+m.team+')':'') : /klasse/i.test(m.type||'') ? 'Competitie – '+m.type : (m.type||'Competitie'));
+  return `<div class="mc ${res(m)}"><div class="mc-top"><span>${fmtDate(m.date)}</span><span>${esc(type)}</span><span class="sp"></span><span class="chip ${res(m)}">${res(m)}</span></div>
+    <div class="mc-main">${home?own:opp}<div class="big">${score}</div>${home?opp:own}</div>
+    <div class="mc-foot">${balls}${trackA(m)&&m.assists?`<span class="ast">👟 ${m.assists} ${m.assists===1?'assist':'assists'}</span>`:''}${m.note?`<span>${esc(m.note)}</span>`:''}<span class="sp"></span>${withActs?`<button class="btn sm" data-edit="${esc(m.id)}">Wijzig</button><button class="btn sm danger" data-del="${esc(m.id)}">Verwijder</button>`:''}</div></div>`;
+}
+function renderMatches(){
+  const seasons=[...new Set(S.matches.map(m=>m.season))].sort((a,b)=>seasonOrder(b)-seasonOrder(a));
+  let list=S.matches.filter(m=>(filt.season==='all'||m.season===filt.season)&&(filt.kind==='all'||m.kind===filt.kind)&&(!filt.q||(m.opp+' '+dn(m.opp)+' '+(m.oppRaw||'')).toLowerCase().includes(filt.q.toLowerCase())));
+  list.sort((a,b)=>chron(b,a));
+  let html=`<div class="toolbar">
+    <select id="fs" aria-label="Seizoen"><option value="all">Alle seizoenen</option>${seasons.map(s=>`<option ${filt.season===s?'selected':''}>${s}</option>`).join('')}</select>
+    <select id="fk" aria-label="Soort"><option value="competitie" ${filt.kind==='competitie'?'selected':''}>Competitie</option><option value="toernooi" ${filt.kind==='toernooi'?'selected':''}>Toernooi</option><option value="all" ${filt.kind==='all'?'selected':''}>Alles</option></select>
+    <input id="fq" type="search" placeholder="Zoek tegenstander" value="${esc(filt.q)}"></div>`;
+  const r=rec(list);
+  html+=`<p class="note" style="margin:0 0 4px">${r.n} wedstrijden · ${r.w} W · ${r.d} G · ${r.l} V · saldo ${sgn(r.saldo)} · ${r.g} goals Ben (${dec(r.avg)} per wedstrijd)</p>`;
+  if(!list.length) html+='<div class="empty">Geen wedstrijden gevonden.</div>';
+  let cur=null; for(const m of list){ if(m.season!==cur){cur=m.season; html+=`<div class="seasonh">Seizoen ${cur}</div>`;} html+=matchCard(m); }
+  $('#p-wedstrijden').innerHTML=html;
+  const fs=$('#fs'),fk=$('#fk'),fq=$('#fq');
+  fs.onchange=()=>{filt.season=fs.value;renderMatches();}; fk.onchange=()=>{filt.kind=fk.value;renderMatches();};
+  fq.oninput=()=>{filt.q=fq.value; const pos=fq.selectionStart; renderMatches(); const n=$('#fq'); n.focus(); n.setSelectionRange(pos,pos);};
+}
+const openT=new Set();
+function tourLogo(t){ const c=t.club; if(!c) return ''; if(c===OWN) return ownLogo(34);
+  return `<button class="lgbtn" data-logo="${esc(c)}" title="Logo kiezen voor ${esc(c)} (organisator)" aria-label="Logo kiezen voor ${esc(c)}">${oppLogo(c,34)}</button>`; }
+function allClubs(){ const s=new Set(S.matches.map(m=>m.opp)); S.tours.forEach(t=>{ if(t.club) s.add(t.club); }); s.delete(OWN); return [...s]; }
+function renderTours(){
+  const ts=S.tours.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  let html='';
+  if(!ts.length) html='<div class="card empty">Nog geen toernooien. Voeg er een toe via het tabblad Toevoegen.</div>';
+  for(const t of ts){
+    const ms=S.matches.filter(m=>m.tour===t.id).sort(chron), r=rec(ms);
+    html+=`<details class="tour" ${openT.has(t.id)?'open':''} data-tid="${esc(t.id)}"><summary>${tourLogo(t)}<span class="tn2">${esc(t.name)}${tourWon(t.id)?' <span class="cup" title="Beker gewonnen" aria-label="Beker gewonnen">🏆</span>':''}</span><span class="badge">${fmtDate(t.date)} · ${t.season}</span>
+      <span class="badge">${r.n} wedstr. · ${r.w}W ${r.d}G ${r.l}V · ${r.gf}–${r.ga} · ${r.g} goals Ben</span></summary>
+      <div class="body">${ms.map(m=>matchCard(m)).join('')||'<div class="empty">Nog geen wedstrijden.</div>'}
+      <div class="row" style="margin-top:10px"><button class="btn sm pri" data-addto="${esc(t.id)}">+ Wedstrijd toevoegen</button><button class="btn sm danger" data-deltour="${esc(t.id)}">Toernooi verwijderen</button></div></div></details>`;
+  }
+  $('#p-toernooien').innerHTML=html;
+  document.querySelectorAll('.tour').forEach(d=>d.addEventListener('toggle',()=>{ d.open?openT.add(d.dataset.tid):openT.delete(d.dataset.tid); }));
+}
+function renderOpps(){
+  const g={}; for(const m of S.matches){ (g[m.opp]=g[m.opp]||[]).push(m); }
+  let rows=Object.entries(g).map(([o,ms])=>({o,...rec(ms)}));
+  const k=oppSort.k; rows.sort((a,b)=> (k==='o'? dn(a.o).localeCompare(dn(b.o))*oppSort.d*-1 : (b[k]-a[k])*(oppSort.d*-1)) || a.o.localeCompare(b.o));
+  const th=(key,label)=>`<th class="sort" data-sort="${key}">${label}${oppSort.k===key?(oppSort.d===-1?' ▾':' ▴'):''}</th>`;
+  let body='';
+  const missing=allClubs().filter(o=>!S.logos[slug(o)]).sort((a,b)=>a.localeCompare(b)), nolo=missing.length;
+  for(const r of rows){
+    body+=`<tr data-opp="${esc(r.o)}" style="cursor:pointer"><td class="tn1"><div class="tw">${r.o===OWN?oppLogo(r.o,30):`<button class="lgbtn" data-logo="${esc(r.o)}" title="Logo kiezen voor ${esc(r.o)}" aria-label="Logo kiezen voor ${esc(r.o)}">${oppLogo(r.o,30)}</button>`}<span>${esc(dn(r.o))}</span></div></td><td>${r.n}</td><td>${r.g}</td><td>${dec(r.avg)}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}–${r.ga}</td><td class="${cls(r.saldo)}">${sgn(r.saldo)}</td></tr>`;
+    if(openOpp===r.o) body+=`<tr><td colspan="9" class="txt" style="background:var(--soft)">${g[r.o].slice().sort((a,b)=>chron(b,a)).map(m=>`<div style="padding:4px 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center">${m.season} · ${m.kind==='toernooi'?'toernooi':'competitie'} · ${inlineScore(m)} <span class="chip ${res(m)}">${res(m)}</span>${m.goals?` <span>${'⚽'.repeat(m.goals)}</span>`:''}</div>`).join('')}</td></tr>`;
+  }
+  $('#p-tegenstanders').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">Tegenstanders <span class="badge">(${rows.length})</span></h2>
+  <button class="btn sm" id="bulkLogos" type="button">Logo's toevoegen</button></div>
+  <p class="note" style="margin-top:0"></p>
+  <div class="scroll"><table><thead><tr>${th('o','Team')}${th('n','Gespeeld')}${th('g','Goals Ben')}${th('avg','Gem.')}${th('w','W')}${th('d','G')}${th('l','V')}${th('gf','Doelpunten')}${th('saldo','Saldo')}</tr></thead><tbody>${body}</tbody></table></div>
+  <p class="note">Teamnummers zoals JO12-1 of JO10-2 tellen niet mee: KHFC is gewoon KHFC. Tik op de naam voor de wedstrijden.</p></div>`;
+}
+function renderLogo(){
+  const b=$('#logoBtn');
+  b.innerHTML = S.logo ? `<img alt="Logo SV Alliance '22" src="${esc(S.logo)}">` :
+   `<svg viewBox="0 0 64 64" aria-label="Logo plaats"><path d="M32 4 56 12v20c0 14-10 24-24 28C18 56 8 46 8 32V12z" fill="#16883F"/><text x="32" y="38" text-anchor="middle" font-family="Space Grotesk,Inter,sans-serif" font-weight="700" font-size="17" fill="#fff">A22</text></svg>`;
+}
+function renderForm(){
+  const opps=[...new Set(S.matches.map(m=>m.opp))].filter(o=>o!==OWN).sort((a,b)=>a.localeCompare(b));
+  $('#oppList').innerHTML=opps.map(o=>`<option value="${esc(o)}">`).join('');
+  const ts=S.tours.slice().sort((a,b)=>b.date.localeCompare(a.date)); const sel=$('#f_tour').value;
+  $('#f_tour').innerHTML=ts.map(t=>`<option value="${esc(t.id)}">${fmtDate(t.date)} · ${esc(t.name)}</option>`).join('')||'<option value="">(eerst een toernooi aanmaken)</option>';
+  if(sel && ts.some(t=>t.id===sel)) $('#f_tour').value=sel;
+  syncKind();
+}
+/* ---------- weetjes ---------- */
+let factPick=null;
+const HAARLEM=new Set(['KHFC','DSS','Onze Gezellen','Geel-Wit','DSK','VV Schoten','Haarlem Kennemerland','Olympia Haarlem']);
+function buildFacts(){
+  const M=S.matches; if(M.length<5) return [];
+  const C=M.slice().sort(chron), F=[], add=(id,w,tag,t,extra='')=>F.push({id,w,tag,t,extra});
+  const sumG=L=>L.reduce((s,m)=>s+(m.goals||0),0), avgG=L=>L.length?sumG(L)/L.length:0;
+  const d1=n=>n.toFixed(1).replace('.',','), pct=(a,b)=>b?Math.round(100*a/b):0, win=L=>L.filter(m=>m.gf>m.ga).length;
+  const G=sumG(M), N=M.length, GF=M.reduce((s,m)=>s+m.gf,0), GA=M.reduce((s,m)=>s+m.ga,0);
+  /* aftellen goals */
+  const ng = G<100?100 : G<200?200 : Math.floor(G/50)*50+50, prev = ng<=100?0 : ng===200?100 : ng-50, rest=ng-G;
+  add('mg',5,'Aftellen', rest===1? `Nog maar <b>1 goal</b> tot de <b>${ng}</b>! Ben staat op ${G}.` : `Ben staat op <b>${G}</b> goals. Nog <b>${rest}</b> te gaan tot de <b>${ng}</b>!`,
+    `<div class="bar" role="img" aria-label="${G} van ${ng} goals"><i style="width:${Math.min(100,100*(G-prev)/(ng-prev))}%"></i></div>`);
+  F[F.length-1].rest=rest;
+  /* datum-weetjes: jubileum (zelfde dag, eerdere jaren) en ronde aantallen dagen */
+  const DAY=864e5, dnum=iso=>{const [y,m,d]=iso.split('-').map(Number); return Date.UTC(y,m-1,d)/DAY;}, nl=n=>n.toLocaleString('nl-NL');
+  const now=new Date(), TD=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'), tn=dnum(TD), byD={};
+  M.forEach(m=>{ if(m.date&&m.date<=TD) (byD[m.date]=byD[m.date]||[]).push(m); });
+  const dates=Object.keys(byD).sort();
+  const what=d=>{ const L=byD[d], tr=L[0].tour&&S.tours.find(x=>x.id===L[0].tour), g=sumG(L), cup=L.some(m=>/beker gewonnen/i.test(m.note||''));
+    if(L.length===1){ const m=L[0]; return `speelde Ben <b>${m.gf}–${m.ga}</b> ${m.home!==false?'thuis':'uit'} tegen <b>${esc(dn(m.opp))}</b>${tr?` (${esc(tr.name)})`:''}${m.goals?` en scoorde hij <b>${m.goals}</b> keer`:''}`; }
+    return `stond Ben op het veld bij ${tr?`<b>${esc(tr.name)}</b>`:`<b>${L.length}</b> wedstrijden`}: ${L.length} wedstrijden, ${win(L)} gewonnen${g?`, <b>${g}</b> ${g===1?'goal':'goals'} van Ben`:''}${cup?'. En de beker ging mee naar huis! 🏆':''}`; };
+  const today=(id,t)=>{ add(id,5,'Vandaag',t); F[F.length-1].today=true; };
+  if(dates.length){
+    const first=dates[0], realFirst=C[0].date===first, fl=realFirst?'zijn allereerste wedstrijd':byD[first][0].tour?'zijn eerste toernooi':'de eerste wedstrijd met datum';
+    dates.forEach(d=>{ if(d<TD&&d.slice(5)===TD.slice(5)){ const y=+TD.slice(0,4)-+d.slice(0,4); today('jr'+d,`Vandaag precies <b>${y} jaar</b> geleden ${what(d)}.`); } });
+    dates.forEach(d=>{ const n=tn-dnum(d); if(n>0&&(n%1000===0||(d===first&&n%100===0))) today('dg'+d,`Vandaag is het precies <b>${nl(n)} dagen</b> geleden${d===first?` dat Ben ${fl} speelde`:''}. Toen ${what(d)}.`); });
+    /* in jaren: halve jaren vanaf de eerste wedstrijd */
+    const [fy,fm,fd]=first.split('-').map(Number), [ty,tm,td]=TD.split('-').map(Number);
+    let mo=(ty-fy)*12+(tm-fm); if(td<fd) mo--;
+    const jr=k=>{ const y=Math.floor(k/2); return k%2? (y?y+',5':'een half'):String(y); };
+    const addMo=k=>{ const t=new Date(Date.UTC(fy,fm-1+k,fd)); return t.getUTCDate()===fd? t.toISOString().slice(0,10):null; };
+    if(mo>0&&mo%6===0&&mo%12!==0&&addMo(mo)===TD) today('hj'+first,`Vandaag is het precies <b>${jr(mo/6)} jaar</b> geleden dat Ben ${fl} speelde. Toen ${what(first)}.`);
+    const yy=Math.floor(mo/12), mm=mo%12, dur=(yy?`${yy} jaar`:'')+(yy&&mm?' en ':'')+(mm?`${mm} ${mm===1?'maand':'maanden'}`:'')||'nog geen maand';
+    let k=Math.floor(mo/6)+1, nh=addMo(k*6); while(!nh&&k<1000){ k++; nh=addMo(k*6); }
+    const n=tn-dnum(first), nx=Math.floor(n/100)*100+100;
+    if(n>0){ add('dagen',2,'Dagen',`Ben speelde ${fl} op <b>${fmtDate(first)}</b>. Dat is al <b>${dur}</b> geleden, oftewel <b>${nl(n)} dagen</b>! Over <b>${nx-n}</b> ${nx-n===1?'dag':'dagen'} is het er precies <b>${nl(nx)}</b>${nh?`, en op <b>${fmtDate(nh)}</b> is het precies <b>${jr(k)} jaar</b>`:''}.`,
+      `<div class="bar" role="img" aria-label="${n} van ${nx} dagen"><i style="width:${n%100}%"></i></div>`); F[F.length-1].rest=nx-n; }
+  }
+  /* aftellen wedstrijden */
+  const nm=Math.floor(N/50)*50+50;
+  add('mm',2,'Aftellen', `Nog <b>${nm-N}</b> ${nm-N===1?'wedstrijd':'wedstrijden'} tot Ben's <b>${nm}e</b> wedstrijd.`,
+    `<div class="bar" role="img" aria-label="${N} van ${nm} wedstrijden"><i style="width:${100*(N-(nm-50))/50}%"></i></div>`);
+  F[F.length-1].rest=nm-N;
+  /* thuis / uit */
+  const H=M.filter(m=>m.home!==false), U=M.filter(m=>m.home===false);
+  if(H.length) add('thuis',1,'Thuis',`Ben scoort in <b>thuiswedstrijden</b> gemiddeld <b>${dec(avgG(H))}</b> doelpunt per wedstrijd.`);
+  if(U.length) add('uit',1,'Uit',`Ben scoort in <b>uitwedstrijden</b> gemiddeld <b>${dec(avgG(U))}</b> doelpunt per wedstrijd.`);
+  /* toernooi vs competitie */
+  const T=M.filter(m=>m.kind==='toernooi'), Co=M.filter(m=>m.kind==='competitie');
+  if(T.length&&Co.length){ const a=avgG(T), b=avgG(Co); add('tc',1,'Toernooien',`Ben scoort op <b>toernooien</b> ${a>b?'<b>vaker</b>':a<b?'<b>minder vaak</b>':'<b>even vaak</b>'} dan in de competitie: <b>${dec(a)}</b> tegen <b>${dec(b)}</b> per wedstrijd.`); }
+  /* mijlpalen */
+  let c=0, at={}; C.forEach((m,i)=>{ const c0=c; c+=m.goals||0; for(const k of [100,200,300,400,500]) if(c0<k&&c>=k&&!at[k]) at[k]={i:i+1,m}; });
+  if(at[100]) add('m100',1,'Mijlpaal',`Ben deed <b>${at[100].i}</b> wedstrijden over zijn <b>eerste 100 goals</b>.`);
+  if(at[200]) add('m200',2,'Mijlpaal',`Van <b>100 naar 200 goals</b> deed Ben er maar <b>${at[200].i-at[100].i}</b> wedstrijden over.`);
+  /* totaal gescoord */
+  add('tot',1,'Doelpunten',`In wedstrijden waarin Ben op het veld stond, is al <b>${(GF+GA).toLocaleString('nl-NL')}</b> keer gescoord.`);
+  /* eerste / tweede seizoenshelft */
+  let h1=0,h2=0; for(const s of [...new Set(C.map(m=>m.season))]){ const L=C.filter(m=>m.season===s&&m.kind==='competitie'&&m.type!=='Oefenwedstrijd'), k=Math.floor(L.length/2); h1+=sumG(L.slice(0,k)); h2+=sumG(L.slice(k)); }
+  if(h1+h2) add('helft',1,'Competitie',`Ben maakte <b>${pct(h1,h1+h2)}%</b> van zijn competitiegoals in de <b>eerste seizoenshelft</b>${h1>h2?' en is dus een vroege starter':h1<h2?' en komt dus pas echt los in de tweede helft':''}.`);
+  /* Haarlem */
+  const Hb=M.filter(m=>HAARLEM.has(m.opp)), Rb=M.filter(m=>!HAARLEM.has(m.opp));
+  if(Hb.length&&Rb.length) add('haarlem',1,'Derby',`Tegen <b>Haarlemse clubs</b> maakt Ben <b>${dec(avgG(Hb))}</b> goals per wedstrijd. Tegen de rest <b>${dec(avgG(Rb))}</b>.`);
+  /* raak */
+  const S1=M.filter(m=>(m.goals||0)>0), S0=M.filter(m=>!(m.goals||0));
+  add('raak',1,'Trefzeker',`Ben scoorde in <b>${S1.length}</b> van zijn <b>${N}</b> wedstrijden. Dat is <b>${pct(S1.length,N)}%</b>.`);
+  if(S1.length&&S0.length) add('winst',1,'Geluksbrenger',`Scoort Ben, dan wint Alliance <b>${pct(win(S1),S1.length)}%</b> van de wedstrijden. Scoort hij niet, dan maar <b>${pct(win(S0),S0.length)}%</b>.`);
+  /* hattricks + record */
+  const hat=M.filter(m=>(m.goals||0)>=3).length, rec_=M.slice().sort((a,b)=>(b.goals||0)-(a.goals||0))[0];
+  if(hat) add('hat',1,'Hattricks',`Ben maakte al <b>${hat} hattricks</b>. Zijn record is <b>${rec_.goals} goals</b> in één wedstrijd: ${rec_.gf}–${rec_.ga} tegen ${esc(dn(rec_.opp))}${rec_.type==='invallen'&&rec_.team?`, als invaller bij ${esc(rec_.team)}`:''}.`);
+  /* aandeel */
+  add('aandeel',1,'Teamspeler',`Van alle Alliance-goals in zijn wedstrijden maakte Ben er <b>${pct(G,GF)}%</b> zelf: <b>${G}</b> van de <b>${GF}</b>.`);
+  /* reeks */
+  let best=0,cur=0; for(const m of C){ cur=(m.goals||0)>0?cur+1:0; best=Math.max(best,cur); }
+  if(best>1) add('reeks',1,'Reeks',`Ben scoorde ooit <b>${best} wedstrijden op rij</b>. Dat is zijn langste reeks.`);
+  /* beste seizoen */
+  const seas=[...new Set(M.map(m=>m.season))].map(s=>{const L=M.filter(m=>m.season===s); return {s,n:L.length,a:avgG(L)};}).filter(x=>x.n>=10).sort((a,b)=>b.a-a.a);
+  if(seas.length>1) add('seizoen',1,'Topseizoen',`Ben's beste seizoen was <b>${seas[0].s}</b>: <b>${dec(seas[0].a)}</b> goals per wedstrijd.`);
+  /* invallen */
+  const Iv=M.filter(m=>m.type==='invallen');
+  if(Iv.length>=3) add('inval',1,'Invallen',`Als <b>invaller</b> bij een ander team scoort Ben gemiddeld <b>${dec(avgG(Iv))}</b> goals per wedstrijd.`);
+  /* favoriete tegenstander */
+  const go={}; M.forEach(m=>{ if(m.opp!==OWN) go[m.opp]=(go[m.opp]||0)+(m.goals||0); }); const mx=Math.max(...Object.values(go)), fav=Object.keys(go).filter(o=>go[o]===mx).map(o=>esc(dn(o)));
+  add('fav',1,'Lievelingstegenstander', fav.length>1? `Ben scoorde de meeste goals tegen <b>${fav.slice(0,-1).join(', ')} en ${fav.slice(-1)}</b>: allebei <b>${mx}</b>.` : `Ben scoorde de meeste goals tegen <b>${fav[0]}</b>: <b>${mx}</b>.`);
+  /* gemiddelde uitslag */
+  add('uitslag',1,'Spektakel',`De gemiddelde uitslag als Ben meedoet is <b>${d1(GF/N)}–${d1(GA/N)}</b>. Afgerond dus <b>${Math.round(GF/N)}–${Math.round(GA/N)}</b>!`);
+  /* --- extra weetjes --- */
+  const real=M.filter(m=>m.opp!==OWN);
+  const zg=real.slice().sort((a,b)=>(b.gf-b.ga)-(a.gf-a.ga))[0];
+  if(zg&&zg.gf>zg.ga) add('zege',1,'Feest',`De <b>grootste zege</b> met Ben erbij is <b>${zg.gf}–${zg.ga}</b> tegen ${esc(dn(zg.opp))}${(zg.goals||0)>=3?`, en Ben maakte er zelf <b>${zg.goals}</b>`:''}.`);
+  const nl_=real.slice().sort((a,b)=>(b.ga-b.gf)-(a.ga-a.gf))[0];
+  if(nl_&&nl_.ga>nl_.gf) add('nederlaag',1,'Pech',`De <b>zwaarste nederlaag</b> is <b>${nl_.gf}–${nl_.ga}</b> tegen ${esc(dn(nl_.opp))}${nl_.gf>0&&nl_.goals===nl_.gf?(nl_.gf===1?', en die ene goal maakte Ben zelf':`, en alle ${nl_.gf} goals van Alliance maakte Ben zelf`):''}.`);
+  const clubs=new Set(real.map(m=>m.opp)), hit=new Set(real.filter(m=>(m.goals||0)>0).map(m=>m.opp));
+  add('clubs',1,'Verzamelaar',`Ben scoorde al tegen <b>${hit.size} van de ${clubs.size}</b> clubs waartegen hij speelde.`);
+  const pc={}; real.forEach(m=>{ const o=pc[m.opp]=pc[m.opp]||{n:0,g:0}; o.n++; o.g+=m.goals||0; });
+  const pl=Object.entries(pc).filter(([o,v])=>v.g===0&&v.n>=3).sort((a,b)=>b[1].n-a[1].n)[0];
+  if(pl) add('plaag',1,'Plaaggeest',`<b>${esc(pl[0])}</b> is Ben's plaaggeest: al <b>${pl[1].n} keer</b> tegen gespeeld en nog <b>nooit gescoord</b>.`);
+  const br=M.filter(m=>m.goals===2).length;
+  if(br) add('brace',1,'Dubbelslag',`Ben maakte al <b>${br} keer</b> precies twee goals in één wedstrijd.`);
+  const HT=M.filter(m=>(m.goals||0)>=3);
+  if(HT.length>=3) add('hatwin',1,'Hattrick',`Maakt Ben een hattrick, dan wint Alliance bijna altijd: <b>${win(HT)} van de ${HT.length}</b> keer.`);
+  const solo=M.filter(m=>m.gf>0&&m.goals===m.gf), sw=solo.filter(m=>m.gf>m.ga).sort((a,b)=>b.gf-a.gf)[0];
+  if(solo.length) add('solo',1,'Eenmansleger',`<b>${solo.length} keer</b> maakte Ben <b>alle goals</b> van Alliance zelf${sw?`, zoals bij de ${sw.gf}–${sw.ga}-zege op ${esc(dn(sw.opp))}`:''}.`);
+  const cups=S.tours.filter(t=>tourWon(t.id)).length;
+  if(cups) add('beker',1,'Prijzenkast',`Ben won al <b>${cups} ${cups===1?'beker':'bekers'}</b> op toernooien! 🏆`);
+  /* toernooien: meeste in een kalenderjaar, vaakst tegengekomen, favoriet */
+  const ty={}; S.tours.forEach(t=>{ if(t.date){ const y=t.date.slice(0,4); ty[y]=(ty[y]||0)+1; } });
+  const yb=Object.entries(ty).sort((a,b)=>b[1]-a[1]||a[0]-b[0]);
+  if(yb.length>1&&yb[0][1]>yb[1][1]) add('tjaar',1,'Toernooien',`In <b>${yb[0][0]}</b> speelde Ben de meeste toernooien in één kalenderjaar: <b>${yb[0][1]}</b>.`);
+  const TM=M.filter(m=>m.kind==='toernooi'&&m.opp!==OWN), tc={};
+  TM.forEach(m=>{ const o=tc[m.opp]=tc[m.opp]||{n:0,g:0}; o.n++; o.g+=m.goals||0; });
+  const tl=Object.entries(tc), tmx=Math.max(0,...tl.map(x=>x[1].n)), tof=tl.filter(x=>x[1].n===tmx).map(x=>esc(x[0])), lst=a=>a.length>1?a.slice(0,-1).join(', ')+' en '+a.slice(-1):a[0];
+  if(tmx>1) add('tvaak',1,'Toernooien',`Op toernooien kwam Ben <b>${lst(tof)}</b> het vaakst tegen: ${tof.length>1?'allebei ':''}<b>${tmx} keer</b>.`);
+  const tgx=Math.max(0,...tl.map(x=>x[1].g)), tfa=tl.filter(x=>x[1].g===tgx).map(x=>esc(x[0]));
+  if(tgx>1) add('tfav',1,'Toernooien',`Ben's favoriete tegenstander op toernooien is <b>${lst(tfa)}</b>: ${tfa.length>1?'allebei ':''}<b>${tgx} goals</b>.`);
+  /* assists en betrokkenheid (alleen seizoenen waarin assists worden bijgehouden) */
+  const cs=curSeason(), CA=M.filter(m=>m.season===cs&&trackA(m)), ca=CA.reduce((s,m)=>s+(m.assists||0),0), cg=sumG(CA), cgf=CA.reduce((s,m)=>s+m.gf,0);
+  if(CA.length&&ca) add('betrokken',1,'Spelmaker',`Dit seizoen was Ben betrokken bij <b>${pct(cg+ca,cgf)}%</b> van de Alliance-goals: <b>${cg}</b> goals en <b>${ca}</b> assists, samen ${cg+ca} van de ${cgf}.`);
+  /* standen: gelijke punten, kampioensrace, achterstand */
+  S.standen.filter(st=>st.season===cs).forEach(st=>{
+    const R=standRows(st), N=R.length, tot=N-1, me=R.find(r=>r.t==='own'), tn=r=>r.t==='own'?'Alliance':esc(r.t); if(N<3) return;
+    const done=R.every(r=>r.g>=tot);
+    if(done){ add('sk'+st.id,1,'Stand',`<b>${tn(R[0])}</b> werd kampioen van fase ${st.fase} met <b>${R[0].p} punten</b> uit ${R[0].g} wedstrijden.${me?` Alliance eindigde als <b>${me.pos}e</b>.`:''}`); return; }
+    const byP={}; R.forEach(r=>(byP[r.p]=byP[r.p]||[]).push(r)); const grp=Object.values(byP).sort((a,b)=>b.length-a.length)[0];
+    if(grp.length>=3){ const sameG=grp.every(r=>r.g===grp[0].g); add('sg'+st.id,1,'Stand',`In fase ${st.fase} staan maar liefst <b>${grp.length} teams</b> gelijk met <b>${grp[0].p} punten</b>${sameG?` uit ${grp[0].g} wedstrijden`:''}${grp.some(r=>r.t==='own')?', en Alliance is er één van':''}!`); }
+    const L=R[0], left=r=>Math.max(0,tot-r.g), mxO=Math.max(...R.slice(1).map(r=>r.p+3*left(r)));
+    if(L.p>mxO) add('sc'+st.id,1,'Kampioensrace',`<b>${tn(L)}</b> is al <b>zeker kampioen</b> van fase ${st.fase}!`);
+    else { let w=1; while(w<=left(L)&&L.p+3*w<=mxO) w++;
+      if(w<=left(L)) add('sc'+st.id,1,'Kampioensrace', w===1?`Winnen <b>${tn(L)}</b> de volgende wedstrijd, dan zijn ze <b>zeker kampioen</b> van fase ${st.fase}.`:`Als <b>${tn(L)}</b> nog <b>${w} van hun ${left(L)}</b> wedstrijden winnen, zijn ze <b>zeker kampioen</b> van fase ${st.fase}.`); }
+    if(me&&me.pos>1) add('sa'+st.id,1,'Stand',`Alliance staat in fase ${st.fase} op plek <b>${me.pos}</b>, <b>${L.p-me.p} punten</b> achter koploper ${tn(L)}, met nog <b>${left(me)}</b> ${left(me)===1?'wedstrijd':'wedstrijden'} te gaan.`);
+    else if(me) add('sa'+st.id,1,'Stand',`Alliance staat in fase ${st.fase} <b>bovenaan</b>!`);
+  });
+  /* standen: boven/onder Alliance */
+  S.standen.filter(st=>st.season===cs).sort((a,b)=>a.fase-b.fase).forEach(st=>{
+    const F=(FASES[cs]||[]).find(x=>x.f===+st.fase); if(!F) return;
+    const R=standRows(st), me=R.find(r=>r.t==='own'); if(!me) return;
+    const pos={}; R.forEach(r=>pos[r.t]=r.pos);
+    const L=faseMatches(cs,F).filter(m=>ownTeam(m)&&pos[m.opp]);
+    const up=L.filter(m=>pos[m.opp]<me.pos), dn_=L.filter(m=>pos[m.opp]>me.pos), gu=sumG(up), gd=sumG(dn_), gl=n=>n===1?'goal':'goals', wl=n=>n===1?'wedstrijd':'wedstrijden';
+    if(up.length&&dn_.length){ const au=gu/up.length, ad=gd/dn_.length;
+      add('st'+st.id,1,'Stand',`In fase ${st.fase} scoorde Ben <b>${gu}</b> ${gl(gu)} in ${up.length} ${wl(up.length)} tegen ploegen <b>boven</b> Alliance, en <b>${gd}</b> in ${dn_.length} tegen ploegen <b>eronder</b>${au>ad?'. Hij scoort dus juist meer tegen de sterkere ploegen!':au<ad?'. Hij scoort dus vooral tegen de ploegen onderin.':'.'}`); }
+  });
+  return F;
+}
+/* zak-systeem: alle weetjes komen aan de beurt (in willekeurige volgorde) voordat er een herhaalt; aftellen zit er vaker in */
+const BAGK='bens-wedstrijden-weetjes-zak';
+function pickFact(F,avoid){
+  const ids=F.map(f=>f.id); let bag=[];
+  try{ bag=JSON.parse(localStorage.getItem(BAGK)||'[]'); }catch(e){ bag=window.__bag||[]; }
+  bag=bag.filter(id=>ids.includes(id));
+  if(!bag.filter(id=>id!==avoid).length){
+    const fresh=[]; F.forEach(f=>{ const n=f.w>=5?3:f.w>=2?2:1; for(let i=0;i<n;i++) fresh.push(f.id); });
+    for(let i=fresh.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [fresh[i],fresh[j]]=[fresh[j],fresh[i]]; }
+    bag=bag.concat(fresh);
+  }
+  const i=bag.findIndex(id=>id!==avoid), pick=i>=0?bag.splice(i,1)[0]:ids[0];
+  try{ localStorage.setItem(BAGK,JSON.stringify(bag)); }catch(e){ window.__bag=bag; }
+  return pick;
+}
+function renderWjd(next){
+  const el=$('#wjd'), F=buildFacts(); if(!F.length){ el.hidden=true; return; }
+  if(!next&&!factPick){ const urg=F.find(f=>f.today)||F.filter(f=>f.rest!=null&&f.rest<=10).sort((a,b)=>a.rest-b.rest)[0]; if(urg) factPick=urg.id; }
+  if(next||!factPick||!F.some(f=>f.id===factPick)) factPick=pickFact(F,factPick);
+  const f=F.find(x=>x.id===factPick); el.hidden=false;
+  el.innerHTML=`<span class="ball" aria-hidden="true">⚽</span><div class="top"><span class="stk">Wist je dat…?</span><span class="tag">${f.tag}</span></div><p class="txt">${f.t}</p>${f.extra}<button class="nx" id="wjdNext" type="button">Nog een weetje →</button>`;
+}
+function render(){ renderWjd(); renderTiles(); renderSeasons(); renderMatches(); renderAgenda(); renderTours(); renderOpps(); renderRecords(); renderStand(); renderLogo(); renderForm();
+  const L=S.matches.slice().sort(chron).pop(); $('#upd').textContent = L? `Seizoen ${L.season} · laatste wedstrijd: ${L.gf+'–'+L.ga} ${L.home!==false?'thuis':'uit'} tegen ${dn(L.opp)}${L.date?' ('+fmtDate(L.date)+')':''}` : ''; }
+
+/* ---------- formulier ---------- */
+function syncStatus(){ const p=$('#f_status').value==='planned'; if(p){ $('#f_kind').value='competitie'; } $('#w_kind').hidden=p; document.querySelectorAll('#mform .sc').forEach(x=>x.hidden=p); document.querySelector('#mform button[type=submit]').textContent=p?'Inplannen':'Controleren'; syncKind(); }
+function syncKind(){
+  const t=$('#f_kind').value==='toernooi';
+  $('#w_tour').hidden=!t; $('#w_type').hidden=t;
+  if(t){ const tr=S.tours.find(x=>x.id===$('#f_tour').value); if(tr){ $('#f_date').value=tr.date; } $('#f_date').disabled=true; } else $('#f_date').disabled=false;
+}
+function readForm(){
+  const kind=$('#f_kind').value, err=[];
+  let tour=null, date=$('#f_date').value;
+  if(kind==='toernooi'){ tour=$('#f_tour').value; const tr=S.tours.find(x=>x.id===tour); if(!tr) err.push('Kies eerst een toernooi.'); else date=tr.date; }
+  if(!date) err.push('Vul een datum in.');
+  const oppRaw=$('#f_opp').value.trim(), opp=normOpp(oppRaw); if(!opp) err.push('Vul de tegenstander in.');
+  const n=id=>{const v=$(id).value; return v===''?NaN:Math.floor(+v);};
+  const gf=n('#f_gf'), ga=n('#f_ga'), goals=isNaN(n('#f_goals'))?0:n('#f_goals'), assists=isNaN(n('#f_assists'))?0:n('#f_assists');
+  if(isNaN(gf)||isNaN(ga)||gf<0||ga<0) err.push('Vul beide eindstanden in (0 of hoger).');
+  if(!isNaN(gf)&&goals>gf) err.push('Ben kan niet meer goals maken dan Alliance in totaal scoorde.');
+  if(!isNaN(gf)&&goals+assists>gf) err.push('Goals plus assists van Ben kunnen niet hoger zijn dan het aantal Alliance-goals.');
+  if(err.length) return {err};
+  const old=editing?S.matches.find(m=>m.id===editing):null;
+  const m={id:editing||('m'+Date.now().toString(36)), seq: old? old.seq : (Math.max(0,...S.matches.map(x=>x.seq||0))+1),
+    kind, season:seasonOf(date), date, tour, team: old? (old.team||''):'', opp, oppRaw: oppRaw||opp, home:$('#f_home').value==='1',
+    gf, ga, goals, assists, type: kind==='competitie'?$('#f_type').value:'', note:$('#f_note').value.trim()};
+  return {m};
+}
+function previewHtml(m){
+  const before=S.matches.filter(x=>x.id!==m.id), after=[...before,m];
+  const b=rec(before), a=rec(after), bo=rec(before.filter(x=>x.opp===m.opp)), ao=rec(after.filter(x=>x.opp===m.opp));
+  return `<h3>Klopt dit?</h3>${matchCard(m,false).replace('class="mc ','style="margin-top:8px" class="mc ')}
+  <ul><li>Wedstrijden: ${b.n} → ${a.n} · Goals Ben: ${b.g} → ${a.g} · Gem. per wedstrijd: ${dec(b.avg)} → ${dec(a.avg)}</li>
+  <li>W/G/V: ${b.w}/${b.d}/${b.l} → ${a.w}/${a.d}/${a.l} · Doelsaldo: ${sgn(b.saldo)} → ${sgn(a.saldo)}</li>
+  <li>${esc(dn(m.opp))}: ${bo.n} → ${ao.n} wedstrijden · goals Ben ${bo.g} → ${ao.g}</li>${trackA(m)?`<li>Assists Ben dit seizoen: ${b.a} → ${a.a}</li>`:''}</ul>
+  <div class="row"><button class="btn pri" id="pvOk" type="button">Bevestigen en opslaan</button><button class="btn" id="pvNo" type="button">Aanpassen</button></div>`;
+}
+function resetForm(){
+  editing=null; pending=null; $('#pv').hidden=true; $('#ferr').textContent=''; $('#formTitle').textContent='Wedstrijd toevoegen'; $('#fcancel').hidden=true;
+  for(const id of ['#f_opp','#f_gf','#f_ga','#f_note']) $(id).value=''; $('#f_goals').value='0'; $('#f_assists').value='0'; $('#oppHint').textContent=''; if($('#oppFacts')) $('#oppFacts').innerHTML='';
+  $('#f_status').value='played'; syncStatus();
+}
+function toast(t){ const e=$('#toast'); e.textContent=t; e.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>e.hidden=true,3200); }
+async function guarded(fn){ try{ await fn(); return true; }catch(e){ toast('Opslaan lukt niet: '+(e&&e.code==='invalid_argument'?'je hebt geen schrijfrechten.':(e&&e.message)||'onbekende fout')); return false; } }
+function setTab(t){ if(t==='agenda') t='home'; const home=t==='home'; $('#home').hidden=!home; $('#backbar').hidden=home; document.querySelectorAll('.panel').forEach(p=>p.hidden=home||p.id!=='p-'+t); try{ if(location.hash!=='#'+t) history.replaceState(null,'','#'+t);}catch(e){} }
+function loadIntoForm(m){
+  editing=m.id; setTab('toevoegen'); $('#formTitle').textContent='Wedstrijd wijzigen'; $('#fcancel').hidden=false;
+  $('#f_kind').value=m.kind; if(m.tour) $('#f_tour').value=m.tour; syncKind();
+  if(m.kind==='competitie'){ const ft=$('#f_type'), v=m.type||'Competitie'; if(![...ft.options].some(o=>o.value===v)){ const o=document.createElement('option'); o.value=v; o.textContent=/klasse|invallen/i.test(v)?'Competitie – '+v:v; ft.appendChild(o); } ft.value=v; } $('#f_date').value=m.date||'';
+  $('#f_opp').value=m.oppRaw||m.opp; $('#f_home').value=m.home===false?'0':'1'; $('#f_gf').value=m.gf; $('#f_ga').value=m.ga;
+  $('#f_goals').value=m.goals||0; $('#f_assists').value=m.assists||0; $('#f_note').value=m.note||'';
+  if(m.kind==='competitie') $('#f_date').disabled=false;
+  window.scrollTo({top:0});
+}
+function toDataUrl(file,max=160){
+  return new Promise((ok,no)=>{ const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{ const s=Math.min(1,max/Math.max(img.width,img.height)), c=document.createElement('canvas'); c.width=Math.max(1,Math.round(img.width*s)); c.height=Math.max(1,Math.round(img.height*s)); c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url); ok(c.toDataURL('image/png')); };
+    img.onerror=()=>{ URL.revokeObjectURL(url); no(new Error('Afbeelding niet te lezen')); }; img.src=url; });
+}
+function matchOpp(fileName){
+  const base=slug(fileName.replace(/\.[^.]+$/,'').replace(/logo|wapen|crest|badge/gi,''));
+  if(!base) return null;
+  const opps=allClubs();
+  return opps.find(o=>slug(o)===base) || opps.find(o=>slug(o).length>=3 && (base.startsWith(slug(o))||slug(o).startsWith(base))) || null;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', async e=>{
+  const t=e.target.closest('button,tr[data-opp],th[data-sort],[data-upopen],[data-goto],[data-sv],[data-fase],[data-stand]'); if(!t) return;
+  if(document.body.classList.contains('ro')&&(t.dataset.edit||t.dataset.del||t.dataset.fin||t.dataset.finok||t.dataset.delup||t.dataset.logo||t.dataset.addto||t.dataset.deltour||['stEdit','stSave','suAdd','bulkLogos','pvOk','exportBtn'].includes(t.id))){ e.preventDefault(); e.stopPropagation(); return; }
+  if(t.dataset.sv!=null){ const v=t.dataset.sv; if(faseView!=null&&v){ faseView=null; } else { seasonView=v||null; faseView=null; } renderSeasons(); window.scrollTo({top:0}); return; }
+  if(t.dataset.fase!=null){ faseView=t.dataset.fase; renderSeasons(); window.scrollTo({top:0}); return; }
+  if(t.dataset.stand){ standSel=t.dataset.stand; standEdit=false; renderStand(); setTab('stand'); window.scrollTo({top:0}); return; }
+  if(t.id==='stEdit'){ standEdit=true; return renderStand(); }
+  if(t.id==='stCancel'){ standEdit=false; return renderStand(); }
+  if(t.id==='stSave'){ const st=S.standen.find(x=>x.id===standSel)||curStand(); if(!st) return; const rows=st.rows.map(r=>({...r}));
+    document.querySelectorAll('#p-stand .sti').forEach(i=>{ const v=Math.max(0,Math.floor(+i.value||0)); rows[+i.dataset.sr][i.dataset.sk]=v; });
+    const d=new Date(), up=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(await guarded(()=>api.saveStand({...st,rows,updated:up}))){ standEdit=false; toast('Stand opgeslagen.'); renderStand(); } return; }
+  if(t.id==='suAdd'){ const st=S.standen.find(x=>x.id===standSel)||curStand(); if(!st) return; const h=+$('#su_h').value, a=+$('#su_a').value, hv=$('#su_hg').value, av=$('#su_ag').value, er=$('#suerr');
+    if(h===a){ er.textContent='Kies twee verschillende ploegen.'; return; } if(hv===''||av===''){ er.textContent='Vul beide doelpunten in.'; return; }
+    const hg=Math.max(0,Math.floor(+hv)), ag=Math.max(0,Math.floor(+av)), rows=st.rows.map(r=>({...r})), H=rows[h], A=rows[a];
+    H.g++; A.g++; H.gf+=hg; H.ga+=ag; A.gf+=ag; A.ga+=hg; if(hg>ag){ H.w++; A.l++; } else if(hg<ag){ A.w++; H.l++; } else { H.d++; A.d++; }
+    const d=new Date(), up=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(await guarded(()=>api.saveStand({...st,rows,updated:up}))){ toast(`${teamName(H)} – ${teamName(A)} ${hg}–${ag} verwerkt.`); standEdit=true; renderStand(); } return; }
+  if(t.id==='partyClose'){ $('#party').hidden=true; return; }
+  if(t.dataset.goto){ if(t.dataset.goto==='seizoen'){ seasonView=null; faseView=null; renderSeasons(); } if(t.dataset.goto==='wedstrijden'){ filt={season:'all',kind:'all',q:''}; renderMatches(); } setTab(t.dataset.goto); window.scrollTo({top:0}); return; }
+  if(t.dataset.upopen){ openUp = openUp===t.dataset.upopen? null : t.dataset.upopen; return renderAgenda(); }
+  if(t.matches('#tabs button')) return setTab(t.dataset.t);
+  if(t.dataset.fin){ finUp=t.dataset.fin; return renderAgenda(); }
+  if(t.dataset.fincancel){ finUp=null; return renderAgenda(); }
+  if(t.dataset.finok){ const u=S.upcoming.find(x=>x.id===t.dataset.finok); if(!u) return; const n=id=>{const v=$(id).value; return v===''?NaN:Math.floor(+v);}; const gf=n('#fin_gf'), ga=n('#fin_ga'), g=isNaN(n('#fin_g'))?0:n('#fin_g'), as=isNaN(n('#fin_a'))?0:n('#fin_a');
+    if(isNaN(gf)||isNaN(ga)||gf<0||ga<0){ $('#finerr').textContent='Vul beide eindstanden in.'; return; } if(g>gf){ $('#finerr').textContent='Ben kan niet meer goals maken dan Alliance in totaal scoorde.'; return; } if(g+as>gf){ $('#finerr').textContent='Goals plus assists van Ben kunnen niet hoger zijn dan het aantal Alliance-goals.'; return; }
+    const m={id:'m'+Date.now().toString(36), seq:Math.max(0,...S.matches.map(x=>x.seq||0))+1, kind:'competitie', season:seasonOf(u.date), date:u.date, tour:null, team:'', opp:u.opp, oppRaw:u.oppRaw||u.opp, home:u.home!==false, gf, ga, goals:g, assists:as, type:u.type||'', note:u.note||''};
+    const before=rec(S.matches);
+    if(await guarded(async()=>{ await api.saveMatch(m); await api.delUp(u.id); })){ finUp=null; openUp=null; toast('Wedstrijd afgerond en opgeslagen.'); celebrate(milestonesCrossed(before,rec([...S.matches.filter(x=>x.id!==m.id),m]))); } return; }
+  if(t.dataset.delup){ if(t.dataset.arm){ if(await guarded(()=>api.delUp(t.dataset.delup))) toast('Geplande wedstrijd verwijderd.'); } else { t.dataset.arm='1'; t.textContent='Zeker weten?'; setTimeout(()=>{ if(t.isConnected){ delete t.dataset.arm; t.textContent='Verwijder'; } },3000); } return; }
+  if(t.dataset.logo){ e.stopPropagation(); logoTarget=t.dataset.logo; $('#oppFile').click(); return; }
+  if(t.dataset.edit){ const m=S.matches.find(x=>x.id===t.dataset.edit); if(m) loadIntoForm(m); return; }
+  if(t.dataset.del){ if(t.dataset.arm){ if(await guarded(()=>api.delMatch(t.dataset.del))) toast('Wedstrijd verwijderd.'); } else { t.dataset.arm='1'; t.textContent='Zeker weten?'; setTimeout(()=>{ if(t.isConnected){ delete t.dataset.arm; t.textContent='Verwijder'; } },3000); } return; }
+  if(t.dataset.deltour){ if(t.dataset.arm){ if(await guarded(()=>api.delTour(t.dataset.deltour))) toast('Toernooi verwijderd.'); } else { t.dataset.arm='1'; t.textContent='Toernooi en alle wedstrijden verwijderen?'; setTimeout(()=>{ if(t.isConnected){ delete t.dataset.arm; t.textContent='Toernooi verwijderen'; } },3500); } return; }
+  if(t.dataset.addto){ resetForm(); setTab('toevoegen'); $('#f_kind').value='toernooi'; $('#f_tour').value=t.dataset.addto; syncKind(); $('#f_opp').focus(); window.scrollTo({top:0}); return; }
+  if(t.dataset.sort){ const k=t.dataset.sort; oppSort = oppSort.k===k? {k,d:-oppSort.d} : {k,d:k==='o'?1:-1}; return renderOpps(); }
+  if(t.dataset.opp){ openOpp = openOpp===t.dataset.opp? null : t.dataset.opp; return renderOpps(); }
+  if(t.id==='bulkLogos') return $('#oppFiles').click();
+  if(t.id==='wjdNext') return renderWjd(true);
+  if(t.id==='pvOk'&&pending){ const m=pending; const wasEdit=!!editing; const before=rec(S.matches), after=rec([...S.matches.filter(x=>x.id!==m.id),m]); if(await guarded(()=>api.saveMatch(m))){ toast(wasEdit?'Wijziging opgeslagen.':'Wedstrijd opgeslagen.'); resetForm(); celebrate(milestonesCrossed(before,after)); } return; }
+  if(t.id==='pvNo'){ $('#pv').hidden=true; pending=null; return; }
+  if(t.id==='fcancel') return resetForm();
+  if(t.id==='exportBtn') return exportJson();
+});
+document.addEventListener('keydown',e=>{ const t=e.target.closest&&e.target.closest('[data-goto],[data-sv],[data-fase],[data-stand],[data-upopen]'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } });
+$('#f_kind').onchange=syncKind; $('#f_status').onchange=syncStatus; $('#f_tour').onchange=syncKind;
+$('#f_opp').addEventListener('input',()=>{ const raw=$('#f_opp').value.trim(); const n=normOpp(raw); $('#oppHint').textContent = raw && n && n!==raw ? 'Telt als: '+n : ''; oppFacts(); });
+$('#mform').addEventListener('submit',async e=>{ e.preventDefault();
+  if($('#f_status').value==='planned'){ const date=$('#f_date').value, oppRaw=$('#f_opp').value.trim(), opp=normOpp(oppRaw); const err=[]; if(!date) err.push('Vul een datum in.'); if(!opp) err.push('Vul de tegenstander in.'); if(err.length){ $('#ferr').textContent=err.join(' '); return; }
+    $('#ferr').textContent=''; const u={id:'u'+Date.now().toString(36), date, opp, oppRaw:oppRaw||opp, home:$('#f_home').value==='1', type:$('#f_type').value, note:$('#f_note').value.trim()};
+    if(await guarded(()=>api.saveUp(u))){ toast('Wedstrijd ingepland.'); openUp=u.id; resetForm(); $('#f_date').value=''; render(); setTab('agenda'); } return; }
+  const r=readForm(); if(r.err){ $('#ferr').textContent=r.err.join(' '); $('#pv').hidden=true; return; }
+  $('#ferr').textContent=''; pending=r.m; const pv=$('#pv'); pv.innerHTML=previewHtml(r.m); pv.hidden=false; pv.scrollIntoView({block:'nearest',behavior:'smooth'}); });
+$('#tform').addEventListener('submit',async e=>{ e.preventDefault(); const date=$('#t_date').value, name=$('#t_name').value.trim();
+  if(!date||!name){ $('#terr').textContent='Vul datum en naam in.'; return; } $('#terr').textContent='';
+  const t={id:'t'+Date.now().toString(36), date, name, season:seasonOf(date), club: normOpp($('#t_club').value)||OWN};
+  if(await guarded(()=>api.saveTour(t))){ $('#t_name').value=''; $('#t_club').value=''; toast('Toernooi aangemaakt. Voeg nu de wedstrijden toe.'); resetForm(); $('#f_kind').value='toernooi'; renderForm(); $('#f_tour').value=t.id; syncKind(); $('#f_opp').focus(); } });
+$('#logoBtn').onclick=()=>{ if(!document.body.classList.contains('ro')) $('#logoFile').click(); };
+$('#logoFile').onchange=async ev=>{ const f=ev.target.files[0]; ev.target.value=''; if(!f) return;
+  try{ const d=await toDataUrl(f,256); if(await guarded(()=>api.saveLogo(d))) toast('Logo opgeslagen.'); }catch(e){ toast(e.message); } };
+$('#oppFile').onchange=async ev=>{ const f=ev.target.files[0]; ev.target.value=''; if(!f||!logoTarget) return;
+  try{ const d=await toDataUrl(f); if(await guarded(()=>api.saveOppLogo(slug(logoTarget),d))) toast('Logo van '+logoTarget+' opgeslagen.'); }catch(e){ toast(e.message); } };
+$('#oppFiles').onchange=async ev=>{ const fs=[...ev.target.files]; ev.target.value=''; let ok=0; const miss=[];
+  for(const f of fs){ const o=matchOpp(f.name); if(!o){ miss.push(f.name); continue; } try{ const d=await toDataUrl(f); if(await guarded(()=>api.saveOppLogo(slug(o),d))) ok++; }catch(e){ miss.push(f.name); } }
+  toast(`${ok} logo's gekoppeld${miss.length?`; niet herkend: ${miss.slice(0,4).join(', ')}${miss.length>4?'…':''}`:''}.`); };
+async function exportJson(){
+  const data=JSON.stringify({exported:new Date().toISOString(),matches:S.matches,tours:S.tours,upcoming:S.upcoming,standen:S.standen,logo:S.logo,logos:S.logos});
+  try{ const dl=window.claude&&claude.use? await claude.use('downloads'):null; if(dl){ await dl.save({filename:'bens-wedstrijden-backup.json',data}); return; } }catch(e){}
+  try{ await navigator.clipboard.writeText(data); toast('Back-up gekopieerd naar het klembord.'); }catch(e){ const ta=document.createElement('textarea'); ta.value=data; ta.style.width='100%'; ta.rows=6; $('#dataCard').appendChild(ta); ta.select(); toast('Kopieer de tekst hieronder.'); }
+}
+const TABS=['home','seizoen','agenda','wedstrijden','toernooien','tegenstanders','records','stand'];
+window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(TABS.includes(h)){ setTab(h); window.scrollTo({top:0}); } });
+setTab(TABS.includes(location.hash.slice(1))?location.hash.slice(1):'home');
+init();
+</script>
+
+</body></html>
