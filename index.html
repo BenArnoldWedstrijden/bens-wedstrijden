@@ -165,9 +165,10 @@ tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
 .pbox{position:relative;background:linear-gradient(135deg,#0C110D,#16883F);color:#fff;border:3px solid #FFD43B;border-radius:20px;padding:26px 24px;text-align:center;max-width:88vw;box-shadow:0 12px 40px rgba(0,0,0,.5)}
 .pbox .pic{font-size:56px;line-height:1}.pbox .pt{font:700 clamp(30px,8vw,48px)/1.1 var(--f-head);color:#FFD43B;margin:10px 0 6px}.pbox .ps{margin-bottom:16px}
 
-.ro [data-edit],.ro [data-del],.ro [data-fin],.ro [data-delup],.ro [data-addto],.ro [data-deltour],.ro #stEdit,.ro #bulkLogos,.ro #addLink,.ro .addl,.ro #p-toevoegen,.ro #exportBtn{display:none!important}
+.ro .uptime,.ro [data-edit],.ro [data-del],.ro [data-fin],.ro [data-delup],.ro [data-addto],.ro [data-deltour],.ro #stEdit,.ro #bulkLogos,.ro #addLink,.ro .addl,.ro #p-toevoegen,.ro #exportBtn{display:none!important}
 .ro .lgbtn{pointer-events:none;cursor:default}.ro .logo{cursor:default}
 .adminbar{margin-top:6px;font-size:12px;color:#FFD43B}.adminbar[hidden]{display:none}.adminbar button{background:none;border:0;color:#fff;text-decoration:underline;font:inherit;cursor:pointer;padding:0}
+.uptime{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0;margin:0 4px 0 0}.uptime input{padding:6px 8px}
 /* weetje */
 .wjd{margin-top:18px;position:relative;border-radius:18px;padding:20px 18px 16px;background:radial-gradient(circle at 88% 15%,rgba(255,212,59,.35) 0,transparent 38%),linear-gradient(135deg,#0C110D 0%,#123d20 55%,#16883F 100%);color:#fff;overflow:hidden;box-shadow:0 8px 24px rgba(22,136,63,.28)}
 .wjd[hidden]{display:none}
@@ -222,6 +223,7 @@ tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
           <div id="w_tour" hidden><label for="f_tour">Toernooi</label><select id="f_tour"></select></div>
           <div id="w_type"><label for="f_type">Type</label><select id="f_type"><option>Competitie</option><option value="1e klasse">Competitie – 1e klasse</option><option value="2e klasse">Competitie – 2e klasse</option><option value="invallen">Competitie – invallen</option><option>Oefenwedstrijd</option><option>Beker</option><option>Kampioenswedstrijd</option></select></div>
           <div><label for="f_date">Datum</label><input type="date" id="f_date" required></div>
+          <div id="w_time"><label for="f_time">Aanvangstijd</label><input type="time" id="f_time"></div>
           <div class="wide"><label for="f_opp">Tegenstander</label><input id="f_opp" list="oppList" placeholder="bijv. KHFC (JO12-1 e.d. mag erachter)"><datalist id="oppList"></datalist><div class="note" id="oppHint"></div><div id="oppFacts"></div></div>
           <div><label for="f_home">Thuis / uit</label><select id="f_home"><option value="1">Thuis</option><option value="0">Uit</option></select></div>
           <div class="sc"><label for="f_gf">Doelpunten Alliance</label><input type="number" min="0" id="f_gf" inputmode="numeric"></div>
@@ -420,11 +422,11 @@ function renderAgenda(){
   el.innerHTML=ups.map((u,i)=>{ const feat=i===0, key=feat?'-'+u.id:u.id, show=feat?openUp!==key:openUp===key, sp=standPos(u.opp), un=until(u.date);
     return `<div class="card up${feat?' feat':''}" data-uid="${esc(u.id)}">
     ${feat?`<div class="feath">Volgende wedstrijd${un?' · '+un:''}</div>`:''}
-    <div class="mc-h" data-upopen="${esc(key)}" role="button" tabindex="0">${oppLogo(u.opp,feat?60:48)}<div class="nm">${esc(dn(u.opp))}<div class="when">${fmtDate(u.date)} · ${u.home===false?'Uit':'Thuis'}${u.type?' · '+esc(u.type):''}${sp?` · nr. ${sp.pos} van ${sp.n} in fase ${sp.f}`:''}</div></div><span class="badge">${show?'Verberg':'Weetjes'}</span></div>
+    <div class="mc-h" data-upopen="${esc(key)}" role="button" tabindex="0">${oppLogo(u.opp,feat?60:48)}<div class="nm">${esc(dn(u.opp))}<div class="when">${fmtDate(u.date)}${u.time?' · <b>'+esc(u.time)+' uur</b>':''} · ${u.home===false?'Uit':'Thuis'}${u.type?' · '+esc(u.type):''}${sp?` · nr. ${sp.pos} van ${sp.n} in fase ${sp.f}`:''}</div></div><span class="badge">${show?'Verberg':'Weetjes'}</span></div>
     ${u.note?`<p class="note" style="margin:8px 0 0">${esc(u.note)}</p>`:''}
     ${show?factsHtml(u.opp):''}
     ${finUp===u.id?`<div class="fin"><div><label>Alliance</label><input type="number" min="0" id="fin_gf" inputmode="numeric"></div><div><label>Tegenstander</label><input type="number" min="0" id="fin_ga" inputmode="numeric"></div><div><label>Goals Ben</label><input type="number" min="0" id="fin_g" inputmode="numeric" value="0"></div><div><label>Assists Ben</label><input type="number" min="0" id="fin_a" inputmode="numeric" value="0"></div></div><div class="err" id="finerr" role="alert"></div><div class="row" style="margin-top:8px"><button class="btn pri" data-finok="${esc(u.id)}" type="button">Wedstrijd afronden</button><button class="btn" data-fincancel="1" type="button">Annuleer</button></div>`
-      :`<div class="row" style="margin-top:10px"><button class="btn pri" data-fin="${esc(u.id)}" type="button">Uitslag invullen</button><button class="btn" data-delup="${esc(u.id)}" type="button">Verwijder</button></div>`}
+      :`<div class="row" style="margin-top:10px"><label class="uptime">Aanvang <input type="time" data-uptime="${esc(u.id)}" value="${esc(u.time||'')}"></label><button class="btn pri" data-fin="${esc(u.id)}" type="button">Uitslag invullen</button><button class="btn" data-delup="${esc(u.id)}" type="button">Verwijder</button></div>`}
   </div>`; }).join('');
 }
 function renderHomeRow(){
@@ -923,7 +925,7 @@ function previewHtml(m){
 }
 function resetForm(){
   editing=null; pending=null; $('#pv').hidden=true; $('#ferr').textContent=''; $('#formTitle').textContent='Wedstrijd toevoegen'; $('#fcancel').hidden=true;
-  for(const id of ['#f_opp','#f_gf','#f_ga','#f_note']) $(id).value=''; $('#f_goals').value='0'; $('#f_assists').value='0'; $('#oppHint').textContent=''; if($('#oppFacts')) $('#oppFacts').innerHTML='';
+  for(const id of ['#f_opp','#f_gf','#f_ga','#f_note','#f_time']) $(id).value=''; $('#f_goals').value='0'; $('#f_assists').value='0'; $('#oppHint').textContent=''; if($('#oppFacts')) $('#oppFacts').innerHTML='';
   $('#f_status').value='played'; syncStatus();
 }
 function toast(t){ const e=$('#toast'); e.textContent=t; e.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>e.hidden=true,3200); }
@@ -996,12 +998,13 @@ document.addEventListener('click', async e=>{
   if(t.id==='fcancel') return resetForm();
   if(t.id==='exportBtn') return exportJson();
 });
+document.addEventListener('change',async e=>{ const i=e.target.closest&&e.target.closest('[data-uptime]'); if(!i||document.body.classList.contains('ro')) return; const u=S.upcoming.find(x=>x.id===i.dataset.uptime); if(!u||(u.time||'')===i.value) return; await guarded(()=>api.saveUp({...u,time:i.value})); });
 document.addEventListener('keydown',e=>{ const t=e.target.closest&&e.target.closest('[data-goto],[data-sv],[data-fase],[data-stand],[data-upopen]'); if(t&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); t.click(); } });
 $('#f_kind').onchange=syncKind; $('#f_status').onchange=syncStatus; $('#f_tour').onchange=syncKind;
 $('#f_opp').addEventListener('input',()=>{ const raw=$('#f_opp').value.trim(); const n=normOpp(raw); $('#oppHint').textContent = raw && n && n!==raw ? 'Telt als: '+n : ''; oppFacts(); });
 $('#mform').addEventListener('submit',async e=>{ e.preventDefault();
   if($('#f_status').value==='planned'){ const date=$('#f_date').value, oppRaw=$('#f_opp').value.trim(), opp=normOpp(oppRaw); const err=[]; if(!date) err.push('Vul een datum in.'); if(!opp) err.push('Vul de tegenstander in.'); if(err.length){ $('#ferr').textContent=err.join(' '); return; }
-    $('#ferr').textContent=''; const u={id:'u'+Date.now().toString(36), date, opp, oppRaw:oppRaw||opp, home:$('#f_home').value==='1', type:$('#f_type').value, note:$('#f_note').value.trim()};
+    $('#ferr').textContent=''; const u={id:'u'+Date.now().toString(36), date, time:$('#f_time').value||'', opp, oppRaw:oppRaw||opp, home:$('#f_home').value==='1', type:$('#f_type').value, note:$('#f_note').value.trim()};
     if(await guarded(()=>api.saveUp(u))){ toast('Wedstrijd ingepland.'); openUp=u.id; resetForm(); $('#f_date').value=''; render(); setTab('agenda'); } return; }
   const r=readForm(); if(r.err){ $('#ferr').textContent=r.err.join(' '); $('#pv').hidden=true; return; }
   $('#ferr').textContent=''; pending=r.m; const pv=$('#pv'); pv.innerHTML=previewHtml(r.m); pv.hidden=false; pv.scrollIntoView({block:'nearest',behavior:'smooth'}); });
