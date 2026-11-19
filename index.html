@@ -819,6 +819,8 @@ function buildFacts(){
   if(pl) add('plaag',1,'Plaaggeest',`<b>${esc(pl[0])}</b> is Ben's plaaggeest: al <b>${pl[1].n} keer</b> tegen gespeeld en nog <b>nooit gescoord</b>.`);
   const ta=Object.entries(real.reduce((a,m)=>{ const o=a[m.opp]=a[m.opp]||{n:0,ga:0}; o.n++; o.ga+=m.ga; return a; },{})).filter(([o,v])=>v.n>=3).sort((a,b)=>b[1].ga/b[1].n-a[1].ga/a[1].n)[0];
   if(ta) add('tegengoals',1,'Taaie klant',`Tegen <b>${esc(ta[0])}</b> krijgt Ben met zijn team gemiddeld de meeste goals tegen: <b>${d1(ta[1].ga/ta[1].n)}</b> per wedstrijd, in ${ta[1].n} wedstrijden.`);
+  const tf=Object.entries(real.reduce((a,m)=>{ const o=a[m.opp]=a[m.opp]||{n:0,gf:0}; o.n++; o.gf+=m.gf; return a; },{})).filter(([o,v])=>v.n>=3).sort((a,b)=>b[1].gf/b[1].n-a[1].gf/a[1].n)[0];
+  if(tf) add('voorgoals',1,'Fijne klant',`Tegen <b>${esc(tf[0])}</b> scoort Alliance met Ben gemiddeld het meest: <b>${d1(tf[1].gf/tf[1].n)}</b> goals per wedstrijd, in ${tf[1].n} wedstrijden.`);
   const br=M.filter(m=>m.goals===2).length;
   if(br) add('brace',1,'Dubbelslag',`Ben maakte al <b>${br} keer</b> precies twee goals in één wedstrijd.`);
   const HT=M.filter(m=>(m.goals||0)>=3);
