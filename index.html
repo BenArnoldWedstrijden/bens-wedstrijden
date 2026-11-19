@@ -165,9 +165,9 @@ tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
 .pbox{position:relative;background:linear-gradient(135deg,#0C110D,#16883F);color:#fff;border:3px solid #FFD43B;border-radius:20px;padding:26px 24px;text-align:center;max-width:88vw;box-shadow:0 12px 40px rgba(0,0,0,.5)}
 .pbox .pic{font-size:56px;line-height:1}.pbox .pt{font:700 clamp(30px,8vw,48px)/1.1 var(--f-head);color:#FFD43B;margin:10px 0 6px}.pbox .ps{margin-bottom:16px}
 
-.ro [data-edit],.ro [data-del],.ro [data-fin],.ro [data-delup],.ro [data-addto],.ro [data-deltour],.ro #stEdit,.ro #bulkLogos,.ro #addLink,.ro .addl,.ro #p-toevoegen{display:none!important}
+.ro [data-edit],.ro [data-del],.ro [data-fin],.ro [data-delup],.ro [data-addto],.ro [data-deltour],.ro #stEdit,.ro #bulkLogos,.ro #addLink,.ro .addl,.ro #p-toevoegen,.ro #exportBtn{display:none!important}
 .ro .lgbtn{pointer-events:none;cursor:default}.ro .logo{cursor:default}
-.ro .ronote{display:none}
+.adminbar{margin-top:6px;font-size:12px;color:#FFD43B}.adminbar[hidden]{display:none}.adminbar button{background:none;border:0;color:#fff;text-decoration:underline;font:inherit;cursor:pointer;padding:0}
 /* weetje */
 .wjd{margin-top:18px;position:relative;border-radius:18px;padding:20px 18px 16px;background:radial-gradient(circle at 88% 15%,rgba(255,212,59,.35) 0,transparent 38%),linear-gradient(135deg,#0C110D 0%,#123d20 55%,#16883F 100%);color:#fff;overflow:hidden;box-shadow:0 8px 24px rgba(22,136,63,.28)}
 .wjd[hidden]{display:none}
@@ -187,7 +187,7 @@ tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
 
 <header class="top"><div class="wrap">
   <button class="logo" id="logoBtn" type="button" aria-label="Clublogo SV Alliance '22"></button>
-  <div><h1>Ben's wedstrijden</h1><div class="club">SV Alliance '22 &middot; <span id="upd"></span></div></div>
+  <div style="flex:1"><h1>Ben's wedstrijden</h1><div class="club">SV Alliance '22 &middot; <span id="upd"></span></div><div id="adminBar" class="adminbar" hidden>🔑 Beheer staat aan op dit apparaat · <button id="beheerUit" type="button">uitzetten</button></div></div>
 </div></header>
 <input type="file" id="logoFile" accept="image/*" hidden>
 <input type="file" id="oppFile" accept="image/*" hidden>
@@ -321,7 +321,7 @@ function renderStand(){
   <p class="note" style="margin-top:0">${esc(st.title||'')} · seizoen ${st.season}${st.updated?' · bijgewerkt '+fmtDate(st.updated):''}</p>
   ${L.length>1?`<div class="row" style="margin-bottom:10px">${L.map(x=>`<button class="btn sm${x.id===st.id?' pri':''}" data-stand="${esc(x.id)}" type="button">Fase ${x.fase}</button>`).join('')}</div>`:''}
   ${standTable(st,false)}
-  <p class="note">Gesorteerd zoals de KNVB: eerst het minste aantal verliespunten, dan punten en doelsaldo. ${standEdit?'Punten en doelsaldo rekent de app zelf uit.':''}</p></div>`;
+  <p class="note">Gesorteerd zoals de KNVB: eerst het minste aantal verliespunten, dan punten en doelsaldo. ${standEdit?'Punten en doelsaldo rekent de app zelf uit.':'Elke week een nieuwe stand? Voer hier de uitslagen in.'}</p></div>`;
 }
 /* ---------- feestmoment ---------- */
 function milestonesCrossed(b,a){
@@ -521,14 +521,6 @@ function mkDbApi(db){
     async saveStand(st){ await db.doc('standen/'+st.id).set(st); }
   };
 }
-async function init(){
-  render();
-  try{ const r=await fetch('data.json?'+Date.now(),{cache:'no-store'}); const d=await r.json();
-    S.matches=d.matches||[]; S.tours=d.tours||[]; S.upcoming=d.upcoming||[]; S.standen=d.standen||[]; S.logo=d.logo||null; S.logos=d.logos||{}; loaded={m:true,t:true}; mode='static'; api=null;
-    if(d.exported){ const e=new Date(d.exported); window.__exp=e; }
-  }catch(e){ fallback(); return; }
-  render(); if(window.__exp) $('#upd').textContent+=` · bijgewerkt ${window.__exp.toLocaleDateString('nl-NL')}`;
-}
 async function initClaude(){
   render();
   let db=null;
@@ -552,6 +544,79 @@ function fallback(){
   S.matches=d.matches.slice(); S.tours=d.tours.slice(); S.upcoming=(d.upcoming||[]).slice(); S.logo=d.logo||null; S.logos=d.logos||{}; S.standen=(d.standen||[]).slice(); loaded={m:true,t:true};
   $('#storeNote').textContent='Opslag: alleen in deze browser (gedeelde opslag niet beschikbaar). Maak regelmatig een back-up.';
   render();
+}
+
+/* ---------- website: lezen uit data.json, beheer via GitHub ---------- */
+const GH={owner:'BenArnoldWedstrijden',repo:'bens-wedstrijden',branch:'main'}, TK='bw-beheer-sleutel', LK='bw-beheer-laatste';
+let ghToken=null; try{ ghToken=localStorage.getItem(TK); }catch(e){}
+const isAdmin=()=>!!ghToken;
+function applyRole(){ document.body.classList.toggle('ro',!isAdmin()); const b=$('#adminBar'); if(b) b.hidden=!isAdmin(); }
+const b64=str=>{ const u=new TextEncoder().encode(str); let s=''; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); };
+async function gh(path,opt={}){
+  const r=await fetch('https://api.github.com/repos/'+GH.owner+'/'+GH.repo+path,{...opt,headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+ghToken,'X-GitHub-Api-Version':'2022-11-28',...(opt.body?{'Content-Type':'application/json'}:{})}});
+  if(!r.ok){ const t=await r.text().catch(()=>''), e=new Error(r.status===401||r.status===403?'de beheersleutel werkt niet (meer). Stel hem opnieuw in via #beheer.':'GitHub gaf fout '+r.status); e.detail=t; throw e; }
+  return r.json();
+}
+const dataDoc=()=>({exported:new Date().toISOString(),matches:S.matches,tours:S.tours,upcoming:S.upcoming,standen:S.standen});
+const logoDoc=()=>({logo:S.logo,logos:S.logos});
+/* één commit met data.json (en zo nodig logos.json), via de Git Data API: werkt ook voor grote bestanden */
+let ghQueue=Promise.resolve();
+function commit(msg,withLogos){
+  const run=async()=>{
+    const ref=await gh('/git/ref/heads/'+GH.branch), base=await gh('/git/commits/'+ref.object.sha);
+    const files=[['data.json',JSON.stringify(dataDoc())]]; if(withLogos) files.push(['logos.json',JSON.stringify(logoDoc())]);
+    const tree=[]; for(const [p,c] of files){ const bl=await gh('/git/blobs',{method:'POST',body:JSON.stringify({content:b64(c),encoding:'base64'})}); tree.push({path:p,mode:'100644',type:'blob',sha:bl.sha}); }
+    const t=await gh('/git/trees',{method:'POST',body:JSON.stringify({base_tree:base.tree.sha,tree})});
+    const c=await gh('/git/commits',{method:'POST',body:JSON.stringify({message:msg,tree:t.sha,parents:[ref.object.sha]})});
+    await gh('/git/refs/heads/'+GH.branch,{method:'PATCH',body:JSON.stringify({sha:c.sha})});
+    try{ localStorage.setItem(LK,JSON.stringify({at:Date.now(),data:dataDoc(),logos:withLogos?logoDoc():null})); }catch(e){}
+  };
+  const p=ghQueue.then(run); ghQueue=p.catch(()=>{}); return p;
+}
+function mkGhApi(){
+  const up=(list,x)=>{ const i=list.findIndex(y=>y.id===x.id); if(i>=0) list[i]=x; else list.push(x); };
+  const go=async(msg,fn,logos)=>{ const snap=JSON.stringify({m:S.matches,t:S.tours,u:S.upcoming,s:S.standen,l:S.logo,ls:S.logos});
+    fn(); render(); try{ await commit(msg,logos); toast('Opgeslagen. Over ongeveer een minuut staat het online.'); }
+    catch(e){ const o=JSON.parse(snap); S.matches=o.m; S.tours=o.t; S.upcoming=o.u; S.standen=o.s; S.logo=o.l; S.logos=o.ls; render(); throw e; } };
+  return {
+    saveMatch:m=>go('Wedstrijd: '+dn(m.opp)+' '+m.gf+'-'+m.ga,()=>up(S.matches,m)),
+    delMatch:id=>go('Wedstrijd verwijderd',()=>{ S.matches=S.matches.filter(x=>x.id!==id); }),
+    saveUp:u=>go('Gepland: '+dn(u.opp),()=>up(S.upcoming,u)),
+    delUp:id=>go('Geplande wedstrijd weg',()=>{ S.upcoming=S.upcoming.filter(x=>x.id!==id); }),
+    saveTour:t=>go('Toernooi: '+t.name,()=>up(S.tours,t)),
+    delTour:id=>go('Toernooi verwijderd',()=>{ S.tours=S.tours.filter(x=>x.id!==id); S.matches=S.matches.filter(x=>x.tour!==id); }),
+    saveLogo:d=>go('Clublogo',()=>{ S.logo=d; },true),
+    saveOppLogo:(k,d)=>go('Logo '+k,()=>{ S.logos[k]=d; },true),
+    saveStand:st=>go('Stand fase '+st.fase,()=>up(S.standen,st))
+  };
+}
+async function init(){
+  applyRole(); render();
+  try{
+    const bust='?'+Date.now(), [d,l]=await Promise.all([fetch('data.json'+bust,{cache:'no-store'}).then(r=>r.json()), fetch('logos.json'+bust,{cache:'no-store'}).then(r=>r.ok?r.json():{}).catch(()=>({}))]);
+    let D=d, L=l;
+    /* net opgeslagen maar nog niet online? Dan de eigen nieuwste versie tonen */
+    try{ const own=JSON.parse(localStorage.getItem(LK)||'null'); if(own&&isAdmin()&&new Date(own.data.exported)>new Date(d.exported||0)){ D=own.data; if(own.logos) L=own.logos; } }catch(e){}
+    S.matches=D.matches||[]; S.tours=D.tours||[]; S.upcoming=D.upcoming||[]; S.standen=D.standen||[]; S.logo=L.logo||D.logo||null; S.logos=L.logos||D.logos||{}; loaded={m:true,t:true};
+    mode='site'; api=isAdmin()?mkGhApi():null; window.__exp=D.exported?new Date(D.exported):null;
+  }catch(e){ fallback(); return; }
+  render(); if(window.__exp) $('#upd').textContent+=` · bijgewerkt ${window.__exp.toLocaleDateString('nl-NL')}`;
+  $('#storeNote').textContent='Opslag: ben.marcarnold.nl (GitHub). Wijzigingen staan na ongeveer een minuut online.';
+}
+/* beheer aanzetten: ga naar ben.marcarnold.nl/#beheer */
+async function beheerSetup(){
+  try{ history.replaceState(null,'','#home'); }catch(e){}
+  if(isAdmin()){ toast('Beheer staat al aan op dit apparaat.'); return; }
+  const k=prompt('Plak hier je beheersleutel van GitHub (begint met github_pat_):'); if(!k) return;
+  ghToken=k.trim();
+  try{ const r=await gh(''); if(r.permissions&&r.permissions.push===false) throw new Error('deze sleutel mag niet schrijven');
+    localStorage.setItem(TK,ghToken); api=mkGhApi(); applyRole(); render(); toast('Beheer staat aan op dit apparaat.'); }
+  catch(e){ ghToken=null; applyRole(); toast('Sleutel werkt niet: '+e.message); }
+}
+function beheerUit(){ try{ localStorage.removeItem(TK); }catch(e){} ghToken=null; api=null; applyRole(); setTab('home'); render(); toast('Beheer staat uit op dit apparaat.'); }
+async function exportJson(){
+  const blob=new Blob([JSON.stringify({...dataDoc(),...logoDoc()})],{type:'application/json'}), a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='bens-wedstrijden-backup.json'; document.body.appendChild(a); a.click(); a.remove();
 }
 
 /* ---------- weergave ---------- */
@@ -636,7 +701,7 @@ function renderOpps(){
   }
   $('#p-tegenstanders').innerHTML=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">Tegenstanders <span class="badge">(${rows.length})</span></h2>
   <button class="btn sm" id="bulkLogos" type="button">Logo's toevoegen</button></div>
-  <p class="note" style="margin-top:0"></p>
+  <p class="note" style="margin-top:0">${nolo? `<b>Nog geen logo (${nolo}):</b> ${missing.map(esc).join(', ')}. `:'Alle clubs hebben een logo. '}Tik op een rond logo om er een te kiezen, of kies "Logo's toevoegen" en selecteer er meerdere tegelijk (bestandsnaam = teamnaam, bijv. KHFC.png).</p>
   <div class="scroll"><table><thead><tr>${th('o','Team')}${th('n','Gespeeld')}${th('g','Goals Ben')}${th('avg','Gem.')}${th('w','W')}${th('d','G')}${th('l','V')}${th('gf','Doelpunten')}${th('saldo','Saldo')}</tr></thead><tbody>${body}</tbody></table></div>
   <p class="note">Teamnummers zoals JO12-1 of JO10-2 tellen niet mee: KHFC is gewoon KHFC. Tik op de naam voor de wedstrijden.</p></div>`;
 }
@@ -863,7 +928,7 @@ function resetForm(){
 }
 function toast(t){ const e=$('#toast'); e.textContent=t; e.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>e.hidden=true,3200); }
 async function guarded(fn){ try{ await fn(); return true; }catch(e){ toast('Opslaan lukt niet: '+(e&&e.code==='invalid_argument'?'je hebt geen schrijfrechten.':(e&&e.message)||'onbekende fout')); return false; } }
-function setTab(t){ if(t==='agenda') t='home'; const home=t==='home'; $('#home').hidden=!home; $('#backbar').hidden=home; document.querySelectorAll('.panel').forEach(p=>p.hidden=home||p.id!=='p-'+t); try{ if(location.hash!=='#'+t) history.replaceState(null,'','#'+t);}catch(e){} }
+function setTab(t){ if(t==='agenda') t='home'; if(t==='toevoegen'&&document.body.classList.contains('ro')) t='home'; const home=t==='home'; $('#home').hidden=!home; $('#backbar').hidden=home; document.querySelectorAll('.panel').forEach(p=>p.hidden=home||p.id!=='p-'+t); try{ if(location.hash!=='#'+t) history.replaceState(null,'','#'+t);}catch(e){} }
 function loadIntoForm(m){
   editing=m.id; setTab('toevoegen'); $('#formTitle').textContent='Wedstrijd wijzigen'; $('#fcancel').hidden=false;
   $('#f_kind').value=m.kind; if(m.tour) $('#f_tour').value=m.tour; syncKind();
@@ -889,6 +954,7 @@ function matchOpp(fileName){
 document.addEventListener('click', async e=>{
   const t=e.target.closest('button,tr[data-opp],th[data-sort],[data-upopen],[data-goto],[data-sv],[data-fase],[data-stand]'); if(!t) return;
   if(document.body.classList.contains('ro')&&(t.dataset.edit||t.dataset.del||t.dataset.fin||t.dataset.finok||t.dataset.delup||t.dataset.logo||t.dataset.addto||t.dataset.deltour||['stEdit','stSave','suAdd','bulkLogos','pvOk','exportBtn'].includes(t.id))){ e.preventDefault(); e.stopPropagation(); return; }
+  if(t.id==='beheerUit') return beheerUit();
   if(t.dataset.sv!=null){ const v=t.dataset.sv; if(faseView!=null&&v){ faseView=null; } else { seasonView=v||null; faseView=null; } renderSeasons(); window.scrollTo({top:0}); return; }
   if(t.dataset.fase!=null){ faseView=t.dataset.fase; renderSeasons(); window.scrollTo({top:0}); return; }
   if(t.dataset.stand){ standSel=t.dataset.stand; standEdit=false; renderStand(); setTab('stand'); window.scrollTo({top:0}); return; }
@@ -951,14 +1017,14 @@ $('#oppFile').onchange=async ev=>{ const f=ev.target.files[0]; ev.target.value='
 $('#oppFiles').onchange=async ev=>{ const fs=[...ev.target.files]; ev.target.value=''; let ok=0; const miss=[];
   for(const f of fs){ const o=matchOpp(f.name); if(!o){ miss.push(f.name); continue; } try{ const d=await toDataUrl(f); if(await guarded(()=>api.saveOppLogo(slug(o),d))) ok++; }catch(e){ miss.push(f.name); } }
   toast(`${ok} logo's gekoppeld${miss.length?`; niet herkend: ${miss.slice(0,4).join(', ')}${miss.length>4?'…':''}`:''}.`); };
-async function exportJson(){
+async function exportJsonClaude(){
   const data=JSON.stringify({exported:new Date().toISOString(),matches:S.matches,tours:S.tours,upcoming:S.upcoming,standen:S.standen,logo:S.logo,logos:S.logos});
   try{ const dl=window.claude&&claude.use? await claude.use('downloads'):null; if(dl){ await dl.save({filename:'bens-wedstrijden-backup.json',data}); return; } }catch(e){}
   try{ await navigator.clipboard.writeText(data); toast('Back-up gekopieerd naar het klembord.'); }catch(e){ const ta=document.createElement('textarea'); ta.value=data; ta.style.width='100%'; ta.rows=6; $('#dataCard').appendChild(ta); ta.select(); toast('Kopieer de tekst hieronder.'); }
 }
-const TABS=['home','seizoen','agenda','wedstrijden','toernooien','tegenstanders','records','stand'];
-window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(TABS.includes(h)){ setTab(h); window.scrollTo({top:0}); } });
-setTab(TABS.includes(location.hash.slice(1))?location.hash.slice(1):'home');
+const TABS=['home','seizoen','agenda','wedstrijden','toernooien','tegenstanders','records','stand','toevoegen'];
+window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(h==='beheer') return beheerSetup(); if(TABS.includes(h)){ setTab(h); window.scrollTo({top:0}); } });
+if(location.hash==='#beheer') setTimeout(beheerSetup,300); setTab(TABS.includes(location.hash.slice(1))?location.hash.slice(1):'home');
 init();
 </script>
 
