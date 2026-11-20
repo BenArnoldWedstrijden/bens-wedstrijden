@@ -171,9 +171,11 @@ tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
 .uptime{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0;margin:0 4px 0 0}.uptime input{padding:6px 8px}
 .feest{position:relative;overflow:hidden;margin-top:18px;border-radius:18px;padding:18px;background:linear-gradient(135deg,#FFD43B,#ffb703);color:#0C110D;border:3px solid #0C110D;box-shadow:4px 4px 0 #0C110D}
 .feest[hidden]{display:none}.feest .ftxt{position:relative}.feest .fbig{font:700 clamp(24px,6vw,34px)/1.1 var(--f-head);margin-bottom:6px}
-.feest .fconf i{position:absolute;top:-30px;font-style:normal;font-size:20px;animation:fval linear infinite;opacity:.85}
+.feest .fconf i{position:absolute;top:-20px;width:9px;height:5px;border-radius:1px;animation:fval linear infinite;opacity:.9}
 @keyframes fval{to{transform:translateY(220px) rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.feest .fconf{display:none}}
+.wbtns{position:relative;display:flex;gap:8px;flex-wrap:wrap}.wjd .party-btn{background:#FFD43B;color:#0C110D;border-color:#FFD43B}
+canvas.burst{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60}
 /* weetje */
 .wjd{margin-top:18px;position:relative;border-radius:18px;padding:20px 18px 16px;background:radial-gradient(circle at 88% 15%,rgba(255,212,59,.35) 0,transparent 38%),linear-gradient(135deg,#0C110D 0%,#123d20 55%,#16883F 100%);color:#fff;overflow:hidden;box-shadow:0 8px 24px rgba(22,136,63,.28)}
 .wjd[hidden]{display:none}
@@ -332,6 +334,10 @@ function renderStand(){
   <p class="note">Gesorteerd zoals de KNVB: eerst het minste aantal verliespunten, dan punten en doelsaldo. ${standEdit?'Punten en doelsaldo rekent de app zelf uit.':'Elke week een nieuwe stand? Voer hier de uitslagen in.'}</p></div>`;
 }
 /* ---------- feestmoment ---------- */
+const CONF=['#0C110D','#16883F','#2FB45B','#D4AF37','#FFD43B','#B8860B'];
+function confettiBurst(){ const c=document.createElement('canvas'); c.className='burst'; c.setAttribute('aria-hidden','true'); document.body.appendChild(c); const x=c.getContext&&c.getContext('2d'); if(!x||matchMedia('(prefers-reduced-motion: reduce)').matches){ c.remove(); toast('🎉 Confetti!'); return; }
+  const W=c.width=innerWidth, H=c.height=innerHeight; const P=Array.from({length:180},()=>({x:W/2+(Math.random()-.5)*60,y:H*.55,vx:(Math.random()-.5)*14,vy:-8-Math.random()*12,r:5+Math.random()*6,a:Math.random()*6,s:(Math.random()-.5)*.3,c:CONF[Math.floor(Math.random()*CONF.length)]})); const t0=performance.now();
+  (function f(t){ x.clearRect(0,0,W,H); P.forEach(p=>{ p.vy+=.35; p.vx*=.99; p.x+=p.vx; p.y+=p.vy; p.a+=p.s; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillStyle=p.c; x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); x.restore(); }); if(t-t0<3500) requestAnimationFrame(f); else c.remove(); })(t0); }
 function milestonesCrossed(b,a){
   const out=[], step=(x,s)=>Math.floor(x/s);
   if(step(a.g,50)>step(b.g,50) && a.g>=100) out.push(`${step(a.g,50)*50} GOALS!`);
@@ -343,7 +349,7 @@ function celebrate(lines){
   const el=$('#party'); el.hidden=false;
   el.innerHTML=`<canvas id="confetti" aria-hidden="true"></canvas><div class="pbox" role="dialog" aria-label="Mijlpaal"><div class="pic">🎉</div><div class="pt">${lines.map(esc).join('<br>')}</div><div class="ps">Wat een mijlpaal, Ben!</div><button class="btn pri" id="partyClose" type="button">Feest! 🥳</button></div>`;
   const c=$('#confetti'), x=c.getContext&&c.getContext('2d'); if(!x) return;
-  const W=c.width=innerWidth, H=c.height=innerHeight, col=['#FFD43B','#16883F','#ffffff','#2FB45B','#ffb703'];
+  const W=c.width=innerWidth, H=c.height=innerHeight, col=CONF;
   const P=Array.from({length:160},()=>({x:Math.random()*W,y:-20-Math.random()*H,v:2+Math.random()*3,r:4+Math.random()*5,a:Math.random()*6,s:(Math.random()-.5)*.2,c:col[Math.floor(Math.random()*col.length)]}));
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches; let t0=performance.now();
   (function f(t){ if(el.hidden) return; x.clearRect(0,0,W,H); P.forEach(p=>{ if(!reduce){ p.y+=p.v; p.a+=p.s; p.x+=Math.sin(p.a)*1.2; } if(p.y>H) p.y=-10; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillStyle=p.c; x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); x.restore(); }); if(!reduce&&t-t0<9000) requestAnimationFrame(f); })(t0);
@@ -361,11 +367,12 @@ function recentMilestone(){
   return {lines,det,key:lines.join('|')+'@'+(last.date||last.id)};
 }
 function renderFeest(){
-  const el=$('#feest'), f=loaded.m?recentMilestone():null; if(!f){ el.hidden=true; return; }
+  const demo=location.hash==='#feesttest', el=$('#feest'), f=demo?{lines:['200 GOALS!'],det:['Voorbeeld: zo ziet het eruit als Ben zijn <b>200e goal</b> maakt. Dit is een test, er is niets opgeslagen.'],key:'demo'}:(loaded.m?recentMilestone():null); if(!f){ el.hidden=true; return; }
   el.hidden=false;
-  const bits=Array.from({length:18},(_,i)=>`<i style="left:${(i*37)%100}%;animation-delay:${(i*0.37)%3}s;animation-duration:${3+(i%4)}s">${['🎉','🎊','⚽','⭐'][i%4]}</i>`).join('');
+  const bits=Array.from({length:26},(_,i)=>`<i style="left:${(i*37)%100}%;background:${CONF[i%CONF.length]};animation-delay:${((i*0.37)%3).toFixed(2)}s;animation-duration:${3+(i%4)}s"></i>`).join('');
   el.innerHTML=`<div class="fconf" aria-hidden="true">${bits}</div><div class="ftxt"><div class="fbig">🎉 ${f.lines.map(esc).join(' · ')}</div><div>${f.det.join(' ')}</div></div>`;
   let seen=[]; try{ seen=JSON.parse(localStorage.getItem('bw-feest-gezien')||'[]'); }catch(e){}
+  if(demo){ if(!renderFeest.demoShown){ renderFeest.demoShown=1; setTimeout(()=>celebrate(f.lines),400); } return; }
   if(!seen.includes(f.key)){ seen.push(f.key); try{ localStorage.setItem('bw-feest-gezien',JSON.stringify(seen.slice(-20))); }catch(e){} setTimeout(()=>celebrate(f.lines),400); }
 }
 /* ---------- grafiek goals per seizoen ---------- */
@@ -895,6 +902,7 @@ function buildFacts(){
   return F;
 }
 /* zak-systeem: alle weetjes komen aan de beurt (in willekeurige volgorde) voordat er een herhaalt; aftellen zit er vaker in */
+const PARTY=/^(mg|zege|hat|hatwin|solo|beker|voorgoals|raak|winst|clubs|brace|reeks|seizoen|betrokken|m100|m200|aandeel|inval|tjaar|tfav|fav|uitslag|jr|dg|hj|dagen|sk)/;
 const BAGK='bens-wedstrijden-weetjes-zak';
 function pickFact(F,avoid){
   const ids=F.map(f=>f.id); let bag=[];
@@ -914,7 +922,7 @@ function renderWjd(next){
   if(!next&&!factPick){ const urg=F.find(f=>f.today)||F.filter(f=>f.rest!=null&&f.rest<=10).sort((a,b)=>a.rest-b.rest)[0]; if(urg) factPick=urg.id; }
   if(next||!factPick||!F.some(f=>f.id===factPick)) factPick=pickFact(F,factPick);
   const f=F.find(x=>x.id===factPick); el.hidden=false;
-  el.innerHTML=`<span class="ball" aria-hidden="true">⚽</span><div class="top"><span class="stk">Wist je dat…?</span><span class="tag">${f.tag}</span></div><p class="txt">${f.t}</p>${f.extra}<button class="nx" id="wjdNext" type="button">Nog een weetje →</button>`;
+  el.innerHTML=`<span class="ball" aria-hidden="true">⚽</span><div class="top"><span class="stk">Wist je dat…?</span><span class="tag">${f.tag}</span></div><p class="txt">${f.t}</p>${f.extra}<div class="wbtns"><button class="nx" id="wjdNext" type="button">Nog een weetje →</button>${PARTY.test(f.id)?'<button class="nx party-btn" id="wjdParty" type="button">🎉 Confetti!</button>':''}</div>`;
 }
 function render(){ renderFeest(); renderWjd(); renderTiles(); renderSeasons(); renderMatches(); renderAgenda(); renderTours(); renderOpps(); renderRecords(); renderStand(); renderLogo(); renderForm();
   const L=S.matches.slice().sort(chron).pop(); $('#upd').textContent = L? `Seizoen ${L.season} · laatste wedstrijd: ${L.gf+'–'+L.ga} ${L.home!==false?'thuis':'uit'} tegen ${dn(L.opp)}${L.date?' ('+fmtDate(L.date)+')':''}` : ''; }
@@ -960,7 +968,7 @@ function resetForm(){
 }
 function toast(t){ const e=$('#toast'); e.textContent=t; e.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>e.hidden=true,3200); }
 async function guarded(fn){ try{ await fn(); return true; }catch(e){ toast('Opslaan lukt niet: '+(e&&e.code==='invalid_argument'?'je hebt geen schrijfrechten.':(e&&e.message)||'onbekende fout')); return false; } }
-function setTab(t){ if(t==='agenda') t='home'; if(t==='toevoegen'&&document.body.classList.contains('ro')) t='home'; const home=t==='home'; $('#home').hidden=!home; $('#backbar').hidden=home; document.querySelectorAll('.panel').forEach(p=>p.hidden=home||p.id!=='p-'+t); try{ if(location.hash!=='#'+t) history.replaceState(null,'','#'+t);}catch(e){} }
+function setTab(t){ if(t==='agenda'||t==='feesttest') t='home'; if(t==='toevoegen'&&document.body.classList.contains('ro')) t='home'; const home=t==='home'; $('#home').hidden=!home; $('#backbar').hidden=home; document.querySelectorAll('.panel').forEach(p=>p.hidden=home||p.id!=='p-'+t); try{ if(location.hash!=='#'+t&&location.hash!=='#feesttest') history.replaceState(null,'','#'+t);}catch(e){} }
 function loadIntoForm(m){
   editing=m.id; setTab('toevoegen'); $('#formTitle').textContent='Wedstrijd wijzigen'; $('#fcancel').hidden=false;
   $('#f_kind').value=m.kind; if(m.tour) $('#f_tour').value=m.tour; syncKind();
@@ -1023,6 +1031,7 @@ document.addEventListener('click', async e=>{
   if(t.dataset.opp){ openOpp = openOpp===t.dataset.opp? null : t.dataset.opp; return renderOpps(); }
   if(t.id==='bulkLogos') return $('#oppFiles').click();
   if(t.id==='wjdNext') return renderWjd(true);
+  if(t.id==='wjdParty') return confettiBurst();
   if(t.id==='pvOk'&&pending){ const m=pending; const wasEdit=!!editing; const before=rec(S.matches), after=rec([...S.matches.filter(x=>x.id!==m.id),m]); if(await guarded(()=>api.saveMatch(m))){ toast(wasEdit?'Wijziging opgeslagen.':'Wedstrijd opgeslagen.'); resetForm(); celebrate(milestonesCrossed(before,after)); } return; }
   if(t.id==='pvNo'){ $('#pv').hidden=true; pending=null; return; }
   if(t.id==='fcancel') return resetForm();
@@ -1055,7 +1064,7 @@ async function exportJsonClaude(){
   try{ const dl=window.claude&&claude.use? await claude.use('downloads'):null; if(dl){ await dl.save({filename:'bens-wedstrijden-backup.json',data}); return; } }catch(e){}
   try{ await navigator.clipboard.writeText(data); toast('Back-up gekopieerd naar het klembord.'); }catch(e){ const ta=document.createElement('textarea'); ta.value=data; ta.style.width='100%'; ta.rows=6; $('#dataCard').appendChild(ta); ta.select(); toast('Kopieer de tekst hieronder.'); }
 }
-const TABS=['home','seizoen','agenda','wedstrijden','toernooien','tegenstanders','records','stand','toevoegen'];
+const TABS=['feesttest','home','seizoen','agenda','wedstrijden','toernooien','tegenstanders','records','stand','toevoegen'];
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(h==='beheer') return beheerSetup(); if(TABS.includes(h)){ setTab(h); window.scrollTo({top:0}); } });
 if(location.hash==='#beheer') setTimeout(beheerSetup,300); setTab(TABS.includes(location.hash.slice(1))?location.hash.slice(1):'home');
 init();
