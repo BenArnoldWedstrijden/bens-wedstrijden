@@ -792,6 +792,18 @@ function buildFacts(){
     if(n>0){ add('dagen',2,'Dagen',`Ben speelde ${fl} op <b>${fmtDate(first)}</b>. Dat is al <b>${dur}</b> geleden, oftewel <b>${nl(n)} dagen</b>! Over <b>${nx-n}</b> ${nx-n===1?'dag':'dagen'} is het er precies <b>${nl(nx)}</b>${nh?`, en op <b>${fmtDate(nh)}</b> is het precies <b>${jr(k)} jaar</b>`:''}.`,
       `<div class="bar" role="img" aria-label="${n} van ${nx} dagen"><i style="width:${n%100}%"></i></div>`); F[F.length-1].rest=nx-n; }
   }
+  /* volgende wedstrijd: dagen, binnen 48 uur in uren */
+  { const now=new Date(), at=u=>{ const [y,mo,d]=u.date.split('-').map(Number), [h,mi]=(u.time||'00:00').split(':').map(Number); return new Date(y,mo-1,d,h,mi); };
+    const nx=S.upcoming.filter(u=>u.date&&at(u)-now>-2*36e5).sort((a,b)=>at(a)-at(b))[0];
+    if(nx){ const ms=at(nx)-now, wd=['zo','ma','di','wo','do','vr','za'][at(nx).getDay()], dag=new Date(now.getFullYear(),now.getMonth(),now.getDate()), dd=Math.round((new Date(at(nx).getFullYear(),at(nx).getMonth(),at(nx).getDate())-dag)/864e5);
+      const wie=`${nx.home===false?'uit bij':'thuis tegen'} <b>${esc(dn(nx.opp))}</b> (${wd} ${fmtDate(nx.date).slice(0,5)}${nx.time?', '+esc(nx.time)+' uur':''})`;
+      let t;
+      if(ms<=0) t=`De wedstrijd ${wie} is <b>nu bezig</b>! Duimen maar.`;
+      else if(ms>48*36e5) t=`Nog <b>${dd} dagen</b> tot de volgende wedstrijd: ${wie}.`;
+      else if(!nx.time) t=`${dd===0?'<b>Vandaag</b>':dd===1?'<b>Morgen</b>':'<b>Overmorgen</b>'} is de volgende wedstrijd: ${wie}.`;
+      else if(ms<36e5) t=`Nog maar <b>${Math.max(1,Math.round(ms/6e4))} minuten</b> tot de aftrap: ${wie}!`;
+      else { const h=Math.round(ms/36e5); t=`Nog <b>${h} uur</b> tot de volgende wedstrijd: ${wie}.`; }
+      add('volgende',1,'Aftellen',t); } }
   /* aftellen wedstrijden */
   const nm=Math.floor(N/50)*50+50;
   add('mm',nm-N<=10?2:1,'Aftellen', `Nog <b>${nm-N}</b> ${nm-N===1?'wedstrijd':'wedstrijden'} tot Ben's <b>${nm}e</b> wedstrijd.`,
