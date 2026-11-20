@@ -918,7 +918,7 @@ function pickFact(F,avoid){
   return pick;
 }
 function renderWjd(next){
-  const el=$('#wjd'), F=buildFacts(); if(!F.length){ el.hidden=true; return; }
+  const el=$('#wjd'), F=buildFacts(); if(!F.length||location.hash==='#feesttest'){ el.hidden=true; return; }
   if(!next&&!factPick){ const urg=F.find(f=>f.today)||F.filter(f=>f.rest!=null&&f.rest<=10).sort((a,b)=>a.rest-b.rest)[0]; if(urg) factPick=urg.id; }
   if(next||!factPick||!F.some(f=>f.id===factPick)) factPick=pickFact(F,factPick);
   const f=F.find(x=>x.id===factPick); el.hidden=false;
