@@ -919,7 +919,7 @@ function pickFact(F,avoid){
 }
 function renderWjd(next){
   const el=$('#wjd'), F=buildFacts(); if(!F.length||location.hash==='#feesttest'){ el.hidden=true; return; }
-  if(!next&&!factPick){ const urg=F.find(f=>f.today)||F.filter(f=>f.rest!=null&&f.rest<=10).sort((a,b)=>a.rest-b.rest)[0]; if(urg) factPick=urg.id; }
+  if(!next&&!factPick){ const g=F.find(f=>f.id==='mg'&&f.rest<=3), m=F.find(f=>f.id==='mm'&&f.rest<=3), urg=g||m||F.find(f=>f.today); if(urg) factPick=urg.id; }
   if(next||!factPick||!F.some(f=>f.id===factPick)) factPick=pickFact(F,factPick);
   const f=F.find(x=>x.id===factPick); el.hidden=false;
   el.innerHTML=`<span class="ball" aria-hidden="true">⚽</span><div class="top"><span class="stk">Wist je dat…?</span><span class="tag">${f.tag}</span></div><p class="txt">${f.t}</p>${f.extra}<div class="wbtns"><button class="nx" id="wjdNext" type="button">Nog een weetje →</button>${PARTY.test(f.id)?'<button class="nx party-btn" id="wjdParty" type="button">🎉 Confetti!</button>':''}</div>`;
