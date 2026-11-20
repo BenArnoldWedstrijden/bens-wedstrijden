@@ -764,7 +764,7 @@ function buildFacts(){
   const G=sumG(M), N=M.length, GF=M.reduce((s,m)=>s+m.gf,0), GA=M.reduce((s,m)=>s+m.ga,0);
   /* aftellen goals */
   const ng = G<100?100 : G<200?200 : Math.floor(G/50)*50+50, prev = ng<=100?0 : ng===200?100 : ng-50, rest=ng-G;
-  add('mg',5,'Aftellen', rest===1? `Nog maar <b>1 goal</b> tot de <b>${ng}</b>! Ben staat op ${G}.` : `Ben staat op <b>${G}</b> goals. Nog <b>${rest}</b> te gaan tot de <b>${ng}</b>!`,
+  add('mg',rest<=10?5:1,'Aftellen', rest===1? `Nog maar <b>1 goal</b> tot de <b>${ng}</b>! Ben staat op ${G}.` : `Ben staat op <b>${G}</b> goals. Nog <b>${rest}</b> te gaan tot de <b>${ng}</b>!`,
     `<div class="bar" role="img" aria-label="${G} van ${ng} goals"><i style="width:${Math.min(100,100*(G-prev)/(ng-prev))}%"></i></div>`);
   F[F.length-1].rest=rest;
   /* datum-weetjes: jubileum (zelfde dag, eerdere jaren) en ronde aantallen dagen */
@@ -794,7 +794,7 @@ function buildFacts(){
   }
   /* aftellen wedstrijden */
   const nm=Math.floor(N/50)*50+50;
-  add('mm',2,'Aftellen', `Nog <b>${nm-N}</b> ${nm-N===1?'wedstrijd':'wedstrijden'} tot Ben's <b>${nm}e</b> wedstrijd.`,
+  add('mm',nm-N<=10?2:1,'Aftellen', `Nog <b>${nm-N}</b> ${nm-N===1?'wedstrijd':'wedstrijden'} tot Ben's <b>${nm}e</b> wedstrijd.`,
     `<div class="bar" role="img" aria-label="${N} van ${nm} wedstrijden"><i style="width:${100*(N-(nm-50))/50}%"></i></div>`);
   F[F.length-1].rest=nm-N;
   /* thuis / uit */
