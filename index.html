@@ -169,6 +169,11 @@ tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
 .ro .lgbtn{pointer-events:none;cursor:default}.ro .logo{cursor:default}
 .adminbar{margin-top:6px;font-size:12px;color:#FFD43B}.adminbar[hidden]{display:none}.adminbar button{background:none;border:0;color:#fff;text-decoration:underline;font:inherit;cursor:pointer;padding:0}
 .uptime{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0;margin:0 4px 0 0}.uptime input{padding:6px 8px}
+.feest{position:relative;overflow:hidden;margin-top:18px;border-radius:18px;padding:18px;background:linear-gradient(135deg,#FFD43B,#ffb703);color:#0C110D;border:3px solid #0C110D;box-shadow:4px 4px 0 #0C110D}
+.feest[hidden]{display:none}.feest .ftxt{position:relative}.feest .fbig{font:700 clamp(24px,6vw,34px)/1.1 var(--f-head);margin-bottom:6px}
+.feest .fconf i{position:absolute;top:-30px;font-style:normal;font-size:20px;animation:fval linear infinite;opacity:.85}
+@keyframes fval{to{transform:translateY(220px) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.feest .fconf{display:none}}
 /* weetje */
 .wjd{margin-top:18px;position:relative;border-radius:18px;padding:20px 18px 16px;background:radial-gradient(circle at 88% 15%,rgba(255,212,59,.35) 0,transparent 38%),linear-gradient(135deg,#0C110D 0%,#123d20 55%,#16883F 100%);color:#fff;overflow:hidden;box-shadow:0 8px 24px rgba(22,136,63,.28)}
 .wjd[hidden]{display:none}
@@ -196,6 +201,7 @@ tr.click{cursor:pointer}tr.click:hover td{background:var(--soft)}
 
 <main class="wrap">
   <div id="home">
+  <section class="feest" id="feest" hidden></section>
   <section class="wjd" id="wjd" aria-live="polite" hidden></section>
   <section class="tiles main" id="tilesMain" aria-label="Feiten"></section>
   <section class="tiles sub" id="tilesSub" aria-label="Resultaten"></section>
@@ -341,6 +347,26 @@ function celebrate(lines){
   const P=Array.from({length:160},()=>({x:Math.random()*W,y:-20-Math.random()*H,v:2+Math.random()*3,r:4+Math.random()*5,a:Math.random()*6,s:(Math.random()-.5)*.2,c:col[Math.floor(Math.random()*col.length)]}));
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches; let t0=performance.now();
   (function f(t){ if(el.hidden) return; x.clearRect(0,0,W,H); P.forEach(p=>{ if(!reduce){ p.y+=p.v; p.a+=p.s; p.x+=Math.sin(p.a)*1.2; } if(p.y>H) p.y=-10; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillStyle=p.c; x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); x.restore(); }); if(!reduce&&t-t0<9000) requestAnimationFrame(f); })(t0);
+}
+/* feest blijft staan tot de volgende wedstrijd, maximaal een week */
+function recentMilestone(){
+  const C=S.matches.slice().sort(chron); if(!C.length) return null;
+  const last=C[C.length-1], grp=last.date?C.filter(m=>m.date===last.date):[last];
+  const lines=milestonesCrossed(rec(C.filter(m=>!grp.includes(m))),rec(C)); if(!lines.length) return null;
+  if(last.date){ const days=(Date.now()-new Date(last.date+'T12:00:00'))/864e5; if(days>7.5) return null; }
+  const det=[]; let g=0,n=0;
+  C.forEach(m=>{ const g0=g,n0=n; g+=m.goals||0; n++; if(!grp.includes(m)) return;
+    if(Math.floor(g/50)>Math.floor(g0/50)&&g>=100){ const k=Math.floor(g/50)*50; det.push(`Ben maakte zijn <b>${k}e goal</b> ${m.date?'op '+fmtDate(m.date)+' ':''}tegen ${esc(dn(m.opp))} (${m.gf}–${m.ga}).`); }
+    if(Math.floor(n/50)>Math.floor(n0/50)){ const k=Math.floor(n/50)*50; det.push(`Tegen ${esc(dn(m.opp))} speelde Ben zijn <b>${k}e wedstrijd</b>.`); } });
+  return {lines,det,key:lines.join('|')+'@'+(last.date||last.id)};
+}
+function renderFeest(){
+  const el=$('#feest'), f=loaded.m?recentMilestone():null; if(!f){ el.hidden=true; return; }
+  el.hidden=false;
+  const bits=Array.from({length:18},(_,i)=>`<i style="left:${(i*37)%100}%;animation-delay:${(i*0.37)%3}s;animation-duration:${3+(i%4)}s">${['🎉','🎊','⚽','⭐'][i%4]}</i>`).join('');
+  el.innerHTML=`<div class="fconf" aria-hidden="true">${bits}</div><div class="ftxt"><div class="fbig">🎉 ${f.lines.map(esc).join(' · ')}</div><div>${f.det.join(' ')}</div></div>`;
+  let seen=[]; try{ seen=JSON.parse(localStorage.getItem('bw-feest-gezien')||'[]'); }catch(e){}
+  if(!seen.includes(f.key)){ seen.push(f.key); try{ localStorage.setItem('bw-feest-gezien',JSON.stringify(seen.slice(-20))); }catch(e){} setTimeout(()=>celebrate(f.lines),400); }
 }
 /* ---------- grafiek goals per seizoen ---------- */
 function seasonChart(){
@@ -890,7 +916,7 @@ function renderWjd(next){
   const f=F.find(x=>x.id===factPick); el.hidden=false;
   el.innerHTML=`<span class="ball" aria-hidden="true">⚽</span><div class="top"><span class="stk">Wist je dat…?</span><span class="tag">${f.tag}</span></div><p class="txt">${f.t}</p>${f.extra}<button class="nx" id="wjdNext" type="button">Nog een weetje →</button>`;
 }
-function render(){ renderWjd(); renderTiles(); renderSeasons(); renderMatches(); renderAgenda(); renderTours(); renderOpps(); renderRecords(); renderStand(); renderLogo(); renderForm();
+function render(){ renderFeest(); renderWjd(); renderTiles(); renderSeasons(); renderMatches(); renderAgenda(); renderTours(); renderOpps(); renderRecords(); renderStand(); renderLogo(); renderForm();
   const L=S.matches.slice().sort(chron).pop(); $('#upd').textContent = L? `Seizoen ${L.season} · laatste wedstrijd: ${L.gf+'–'+L.ga} ${L.home!==false?'thuis':'uit'} tegen ${dn(L.opp)}${L.date?' ('+fmtDate(L.date)+')':''}` : ''; }
 
 /* ---------- formulier ---------- */
