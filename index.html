@@ -1043,7 +1043,7 @@ document.addEventListener('click', async e=>{
     if(isNaN(gf)||isNaN(ga)||gf<0||ga<0){ $('#finerr').textContent='Vul beide eindstanden in.'; return; } if(g>gf){ $('#finerr').textContent='Ben kan niet meer goals maken dan Alliance in totaal scoorde.'; return; } if(g+as>gf){ $('#finerr').textContent='Goals plus assists van Ben kunnen niet hoger zijn dan het aantal Alliance-goals.'; return; }
     const m={id:'m'+Date.now().toString(36), seq:Math.max(0,...S.matches.map(x=>x.seq||0))+1, kind:'competitie', season:seasonOf(u.date), date:u.date, tour:null, team:'', opp:u.opp, oppRaw:u.oppRaw||u.opp, home:u.home!==false, gf, ga, goals:g, assists:as, type:u.type||'', note:u.note||''};
     const before=rec(S.matches);
-    if(await guarded(async()=>{ await api.saveMatch(m); await api.delUp(u.id); })){ finUp=null; openUp=null; celebrate(milestonesCrossed(before,rec([...S.matches.filter(x=>x.id!==m.id),m]))); } return; }
+    if(await guarded(async()=>{ await api.saveMatch(m); if(S.upcoming.some(x=>x.id===u.id)) await api.delUp(u.id); })){ finUp=null; openUp=null; celebrate(milestonesCrossed(before,rec([...S.matches.filter(x=>x.id!==m.id),m]))); } return; }
   if(t.dataset.delup){ if(t.dataset.arm){ if(await guarded(()=>api.delUp(t.dataset.delup))) toast('Geplande wedstrijd verwijderd.'); } else { t.dataset.arm='1'; t.textContent='Zeker weten?'; setTimeout(()=>{ if(t.isConnected){ delete t.dataset.arm; t.textContent='Verwijder'; } },3000); } return; }
   if(t.dataset.logo){ e.stopPropagation(); logoTarget=t.dataset.logo; $('#oppFile').click(); return; }
   if(t.dataset.edit){ const m=S.matches.find(x=>x.id===t.dataset.edit); if(m) loadIntoForm(m); return; }
